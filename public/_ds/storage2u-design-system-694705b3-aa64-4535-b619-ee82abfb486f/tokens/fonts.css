@@ -1,0 +1,6 @@
+/* Storage2U — Webfonts
+   Plus Jakarta Sans is the single brand typeface (Google Fonts).
+   Consumers load it via this @import; no local binaries are shipped.
+   If you need a self-hosted copy, download the family and add @font-face here. */
+
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap");

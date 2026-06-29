@@ -1,0 +1,45 @@
+/* Storage2U — Typography tokens
+   Plus Jakarta Sans for everything; JetBrains Mono for code/metadata.
+   Headlines run heavy (700–800) with tight tracking for a "sticker" presence. */
+
+:root {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Weights */
+  --fw-regular: 400;  /* @kind font */
+  --fw-medium:  500;  /* @kind font */
+  --fw-semibold:600;  /* @kind font */
+  --fw-bold:    700;  /* @kind font */
+  --fw-black:   800;  /* @kind font */
+
+  /* Type scale — size / line-height / tracking */
+  --display-lg-size: 56px; --display-lg-lh: 60px; --display-lg-ls: -0.03em;
+  --display-md-size: 48px; --display-md-lh: 54px; --display-md-ls: -0.02em;
+
+  --headline-lg-size: 32px; --headline-lg-lh: 40px; --headline-lg-ls: -0.01em;
+  --headline-md-size: 28px; --headline-md-lh: 36px; --headline-md-ls: -0.01em;
+
+  --title-lg-size: 22px; --title-lg-lh: 30px; --title-lg-ls: -0.005em;
+  --title-md-size: 20px; --title-md-lh: 28px; --title-md-ls: 0; /* @kind font */
+
+  --body-lg-size: 18px; --body-lg-lh: 28px;
+  --body-md-size: 16px; --body-md-lh: 24px;
+  --body-sm-size: 14px; --body-sm-lh: 20px;
+
+  --label-md-size: 14px; --label-md-lh: 20px; --label-md-ls: 0.05em;
+  --label-sm-size: 12px; --label-sm-lh: 16px; --label-sm-ls: 0.06em;
+}
+
+/* Optional utility classes — handy in specimen cards & static HTML */
+.t-display-lg { font: var(--fw-black) var(--display-lg-size)/var(--display-lg-lh) var(--font-sans); letter-spacing: var(--display-lg-ls); }
+.t-display-md { font: var(--fw-black) var(--display-md-size)/var(--display-md-lh) var(--font-sans); letter-spacing: var(--display-md-ls); }
+.t-headline-lg { font: var(--fw-bold) var(--headline-lg-size)/var(--headline-lg-lh) var(--font-sans); letter-spacing: var(--headline-lg-ls); }
+.t-headline-md { font: var(--fw-bold) var(--headline-md-size)/var(--headline-md-lh) var(--font-sans); letter-spacing: var(--headline-md-ls); }
+.t-title-lg { font: var(--fw-semibold) var(--title-lg-size)/var(--title-lg-lh) var(--font-sans); letter-spacing: var(--title-lg-ls); }
+.t-title-md { font: var(--fw-semibold) var(--title-md-size)/var(--title-md-lh) var(--font-sans); }
+.t-body-lg { font: var(--fw-regular) var(--body-lg-size)/var(--body-lg-lh) var(--font-sans); }
+.t-body-md { font: var(--fw-regular) var(--body-md-size)/var(--body-md-lh) var(--font-sans); }
+.t-body-sm { font: var(--fw-regular) var(--body-sm-size)/var(--body-sm-lh) var(--font-sans); }
+.t-label-md { font: var(--fw-semibold) var(--label-md-size)/var(--label-md-lh) var(--font-sans); letter-spacing: var(--label-md-ls); text-transform: uppercase; }
+.t-label-sm { font: var(--fw-semibold) var(--label-sm-size)/var(--label-sm-lh) var(--font-sans); letter-spacing: var(--label-sm-ls); text-transform: uppercase; }

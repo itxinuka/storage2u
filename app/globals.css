@@ -1,26 +1,184 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@clerk/ui/themes/shadcn.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-purple-soft: var(--purple-soft);
+  --color-purple-50: var(--purple-50);
+  --color-purple-100: var(--purple-100);
+  --color-lime-soft: var(--lime-soft);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-accent: var(--brand-accent);
+  --radius-pill: var(--radius-pill);
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.25);
+  --radius-2xl: calc(var(--radius) * 1.5);
+  --radius-3xl: calc(var(--radius) * 2);
+  --radius-4xl: calc(var(--radius) * 2.5);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  /* Storage2U — vibrant purple + lime, lavender surfaces, deep indigo ink.
+     Values mirror the prototype design-system tokens exactly. */
+
+  /* Raw brand primitives (exposed for components that need a softer tint) */
+  --purple-50: #f3ecff;
+  --purple-100: #e9ddff;
+  --purple-500: #8455ef;
+  --purple-600: #6b38d4; /* PRIMARY */
+  --purple-700: #5516be;
+
+  --lime-500: #bff365;
+  --lime-600: #a4d64c;
+
+  --red-100: #ffdad6;
+  --red-600: #ba1a1a;
+  --danger-fg: var(--red-600);
+  --danger-bg: var(--red-100);
+
+  /* Semantic brand aliases (buttons, CTAs) */
+  --brand-primary: var(--purple-600);
+  --brand-primary-hover: var(--purple-700);
+  --on-primary: #ffffff;
+  --brand-accent: var(--lime-500);
+  --brand-accent-hover: var(--lime-600);
+  --on-accent: #243600;
+  --surface-muted: #efebff;
+  --text-body: #2d2a5b;
+  --radius-pill: 9999px;
+
+  --background: #fcf8ff; /* lavender-50 / bg-app */
+  --foreground: #181445; /* indigo-900 / text-strong */
+  --card: #ffffff;
+  --card-foreground: #181445;
+  --popover: #ffffff;
+  --popover-foreground: #181445;
+  --primary: #6b38d4;
+  --primary-foreground: #ffffff;
+  --secondary: #f6f2ff; /* lavender-100 / surface-sunken */
+  --secondary-foreground: #181445;
+  --muted: #f6f2ff; /* surface-sunken */
+  --muted-foreground: #494454; /* indigo-500 / text-muted */
+  --accent: #bff365; /* lime-500 */
+  --accent-foreground: #243600; /* lime-ink-strong */
+  --destructive: #ba1a1a;
+  --border: #cbc3d7; /* outline-variant / border-soft */
+  --input: #cbc3d7;
+  --ring: #8455ef; /* purple-500 */
+  --purple-soft: #e9ddff; /* purple-100 */
+  --lime-soft: #e4fbb8; /* lime-200 */
+  --chart-1: #6b38d4;
+  --chart-2: #bff365;
+  --chart-3: #494454;
+  --chart-4: #f6f2ff;
+  --chart-5: #cbc3d7;
+
+  /* Tiered radius scale — base drives shadcn's derived sm/md/lg/xl tokens.
+     0.75rem keeps cards at 24px (radius-3xl) and tiles ~18px, while buttons,
+     badges and chips stay full pills via rounded-full. */
+  --radius: 0.75rem;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #181445;
+  --sidebar-primary: #6b38d4;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3ecff;
+  --sidebar-accent-foreground: #6b38d4;
+  --sidebar-border: #cbc3d7;
+  --sidebar-ring: #8455ef;
+
+  /* Pillowy, purple-tinted elevation (no harsh black drop shadows) */
+  --shadow-sm: 0 2px 8px -2px rgba(107, 56, 212, 0.1);
+  --shadow-brand: 0 8px 24px -6px rgba(107, 56, 212, 0.14);
+  --shadow-brand-lg: 0 18px 44px -10px rgba(107, 56, 212, 0.2);
+  --ease-squish: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dark {
+  --background: oklch(0.18 0.06 285);
+  --foreground: oklch(0.97 0.01 300);
+  --card: oklch(0.22 0.06 285);
+  --card-foreground: oklch(0.97 0.01 300);
+  --popover: oklch(0.22 0.06 285);
+  --popover-foreground: oklch(0.97 0.01 300);
+  --primary: oklch(0.68 0.18 295);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.28 0.06 285);
+  --secondary-foreground: oklch(0.97 0.01 300);
+  --muted: oklch(0.28 0.06 285);
+  --muted-foreground: oklch(0.72 0.03 300);
+  --accent: oklch(0.91 0.19 130);
+  --accent-foreground: oklch(0.28 0.08 130);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.68 0.18 295);
+  --sidebar: oklch(0.22 0.06 285);
+  --sidebar-foreground: oklch(0.97 0.01 300);
+  --sidebar-primary: oklch(0.68 0.18 295);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.28 0.06 285);
+  --sidebar-accent-foreground: oklch(0.97 0.01 300);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.68 0.18 295);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .shadow-brand {
+    box-shadow: var(--shadow-brand);
+  }
+  .shadow-brand-lg {
+    box-shadow: var(--shadow-brand-lg);
+  }
 }

@@ -1,0 +1,84 @@
+/* Storage2U — Color tokens
+   Brand: Vibrant Purple primary + Lime Green energy accent, on soft lavender/white
+   surfaces with a deep indigo ink. Derived from DESIGN.md (Material-style ramp). */
+
+:root {
+  /* ---- Brand primitives -------------------------------------------------- */
+  /* Purple — primary brand carrier */
+  --purple-700: #5516be;
+  --purple-600: #6b38d4;   /* PRIMARY */
+  --purple-500: #8455ef;
+  --purple-300: #d0bcff;
+  --purple-100: #e9ddff;
+  --purple-50:  #f3ecff;
+
+  /* Lime — high-visibility "energy" accent */
+  --lime-600: #a4d64c;
+  --lime-500: #bff365;     /* ACCENT */
+  --lime-400: #cdf77f;
+  --lime-200: #e4fbb8;
+  --lime-ink: #354e00;     /* readable text on lime */
+  --lime-ink-strong: #243600;
+
+  /* Indigo ink — text & deep surfaces (not pure black) */
+  --indigo-900: #181445;   /* primary ink */
+  --indigo-700: #2d2a5b;
+  --indigo-500: #494454;
+
+  /* Lavender surface ramp */
+  --lavender-0:  #ffffff;
+  --lavender-50: #fcf8ff;  /* app background */
+  --lavender-100:#f6f2ff;
+  --lavender-200:#efebff;
+  --lavender-300:#e9e5ff;
+  --lavender-400:#e3dfff;
+  --lavender-500:#dad6ff;  /* dim */
+
+  /* Outline / hairlines */
+  --outline:        #7b7486;
+  --outline-variant:#cbc3d7;
+
+  /* Semantic status */
+  --green-600: #3a7d22;
+  --green-100: #e1f4d6;
+  --amber-600: #9a6700;
+  --amber-100: #fcefca;
+  --blue-600:  #2f5ed0;
+  --blue-100:  #dde7ff;
+  --red-600:   #ba1a1a;
+  --red-100:   #ffdad6;
+
+  /* ---- Semantic aliases -------------------------------------------------- */
+  --brand-primary:        var(--purple-600);
+  --brand-primary-hover:  var(--purple-700);
+  --brand-primary-soft:   var(--purple-100);
+  --on-primary:           #ffffff;
+
+  --brand-accent:         var(--lime-500);
+  --brand-accent-hover:   var(--lime-600);
+  --brand-accent-soft:    var(--lime-200);
+  --on-accent:            var(--lime-ink-strong);
+
+  --bg-app:        var(--lavender-50);
+  --bg-dim:        var(--lavender-500);
+  --surface-card:  var(--lavender-0);
+  --surface-sunken:var(--lavender-100);
+  --surface-muted: var(--lavender-200);
+  --surface-inverse: var(--indigo-900);
+  --on-inverse:    var(--lavender-50);
+
+  --text-strong:   var(--indigo-900);
+  --text-body:     var(--indigo-700);
+  --text-muted:    var(--indigo-500);
+  --text-on-color: #ffffff;
+
+  --border-soft:   var(--outline-variant);
+  --border-strong: var(--outline);
+  --ring-focus:    var(--purple-500);
+
+  /* Status semantics */
+  --success-fg: var(--green-600);  --success-bg: var(--green-100);
+  --warning-fg: var(--amber-600);  --warning-bg: var(--amber-100);
+  --info-fg:    var(--blue-600);   --info-bg:    var(--blue-100);
+  --danger-fg:  var(--red-600);    --danger-bg:  var(--red-100);
+}

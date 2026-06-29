@@ -1,0 +1,11 @@
+/* Storage2U — Radius & shape tokens
+   Shape language is "Extra Round": no sharp corners anywhere. */
+
+:root {
+  --radius-sm:   8px;    /* tags, small chips inside cards */
+  --radius-md:   16px;   /* default interactive elements, inputs */
+  --radius-lg:   24px;   /* cards */
+  --radius-xl:   32px;   /* large surfaces, hero panels */
+  --radius-2xl:  48px;   /* "bubble" containers, sheet tops */
+  --radius-pill: 9999px; /* buttons, chips, badges, avatars */
+}
