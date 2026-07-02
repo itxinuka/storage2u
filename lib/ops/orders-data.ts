@@ -1,4 +1,4 @@
-import { OPEN_DELIVERY_STATUSES } from "@/lib/dashboard-data"
+import { OPEN_DELIVERY_STATUSES } from "@/lib/delivery-statuses"
 import type { Database } from "@/lib/database.types"
 import type { OpsOrderStatus } from "@/lib/ops-types"
 import { getOpsHub } from "@/lib/ops/schedule-data"

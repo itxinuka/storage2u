@@ -2,7 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server"
 
 import { DashboardView } from "@/components/dashboard-view"
 import { splitBookingsForDisplay } from "@/lib/booking-display"
-import { OPEN_DELIVERY_STATUSES } from "@/lib/dashboard-data"
+import { OPEN_DELIVERY_STATUSES } from "@/lib/delivery-statuses"
 import type { BookingWithItems } from "@/lib/database.types"
 import { getActiveSubscriptionMonthlyCents } from "@/lib/stripe"
 import { createClient } from "@/lib/server"

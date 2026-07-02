@@ -4,7 +4,7 @@ import { auth, currentUser } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
 import { headers } from "next/headers"
 
-import { OPEN_DELIVERY_STATUSES } from "@/lib/dashboard-data"
+import { OPEN_DELIVERY_STATUSES } from "@/lib/delivery-statuses"
 import { createBillingPortalUrl } from "@/lib/stripe"
 import { createClient } from "@/lib/server"
 

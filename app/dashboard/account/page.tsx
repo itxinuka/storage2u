@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 
 import { AccountView } from "@/components/dashboard/account-view"
-import { getAccountPageData, getProfileForUser } from "@/lib/dashboard-data"
+import { getAccountPageData, getProfileForUser } from "@/lib/dashboard-data.server"
 
 export default async function AccountPage() {
   const { userId } = await auth()
