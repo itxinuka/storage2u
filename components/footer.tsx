@@ -17,6 +17,7 @@ const columns = [
     links: [
       { label: "Blog", href: "/blog" },
       { label: "Contact", href: "/contact" },
+      { label: "Privacy policy", href: "/privacy" },
     ],
   },
   {
@@ -60,7 +61,13 @@ export function Footer() {
 
         <div className="mt-11 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-background/45 md:flex-row md:items-center md:justify-between">
           <p>&copy; {new Date().getFullYear()} Storage2U Technologies Inc. Made in Canada.</p>
-          <p>Privacy · Terms · Cookies</p>
+          <p>
+            <Link href="/privacy" className="hover:text-white">
+              Privacy
+            </Link>
+            {" · "}
+            Terms · Cookies
+          </p>
         </div>
       </div>
     </footer>

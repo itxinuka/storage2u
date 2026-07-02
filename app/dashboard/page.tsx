@@ -5,7 +5,7 @@ import { splitBookingsForDisplay } from "@/lib/booking-display"
 import { OPEN_DELIVERY_STATUSES } from "@/lib/dashboard-data"
 import type { BookingWithItems } from "@/lib/database.types"
 import { getActiveSubscriptionMonthlyCents } from "@/lib/stripe"
-import { createServiceRoleClient } from "@/lib/supabase/service"
+import { createClient } from "@/lib/server"
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -14,7 +14,7 @@ export default async function DashboardPage() {
     return null
   }
 
-  const supabase = createServiceRoleClient()
+  const supabase = await createClient()
 
   const { data: profile } = await supabase
     .from("profiles")

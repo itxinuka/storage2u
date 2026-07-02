@@ -1,5 +1,5 @@
 import type { BookingItem, BookingWithItems, Database } from "@/lib/database.types"
-import { createServiceRoleClient } from "@/lib/supabase/service"
+import { createClient } from "@/lib/server"
 
 type DeliveryRequestStatus = Database["public"]["Enums"]["delivery_request_status"]
 
@@ -59,7 +59,7 @@ export type DeliveryDisplay = {
 }
 
 export async function getProfileForUser(clerkUserId: string) {
-  const supabase = createServiceRoleClient()
+  const supabase = await createClient()
   const { data } = await supabase
     .from("profiles")
     .select("*")
@@ -69,7 +69,7 @@ export async function getProfileForUser(clerkUserId: string) {
 }
 
 export async function getDeliveryPageData(profileId: string) {
-  const supabase = createServiceRoleClient()
+  const supabase = await createClient()
 
   const [{ data: deliveryRows }, { data: scheduledPickups }] = await Promise.all([
     supabase
@@ -153,7 +153,7 @@ export type AccountAddress = {
 }
 
 export async function getAccountPageData(profileId: string) {
-  const supabase = createServiceRoleClient()
+  const supabase = await createClient()
 
   const { data: latestBooking } = await supabase
     .from("bookings")

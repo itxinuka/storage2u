@@ -9,7 +9,7 @@ import {
   selectionToLineItems,
 } from "@/lib/booking-catalog"
 import type { Database } from "@/lib/database.types"
-import { createServiceRoleClient } from "@/lib/supabase/service"
+import { createClient } from "@/lib/server"
 
 type BookingItemKind = Database["public"]["Enums"]["booking_item_kind"]
 type BookingModeDb = Database["public"]["Enums"]["booking_mode"]
@@ -59,7 +59,7 @@ export async function createBooking(
     return { success: false, error: "Please pick a date and time window.", code: "validation" }
   }
 
-  const supabase = createServiceRoleClient()
+  const supabase = await createClient()
 
   const fullName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") || null

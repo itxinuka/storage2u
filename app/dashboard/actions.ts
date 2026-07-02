@@ -6,7 +6,7 @@ import { headers } from "next/headers"
 
 import { OPEN_DELIVERY_STATUSES } from "@/lib/dashboard-data"
 import { createBillingPortalUrl } from "@/lib/stripe"
-import { createServiceRoleClient } from "@/lib/supabase/service"
+import { createClient } from "@/lib/server"
 
 const DASHBOARD_PATHS = [
   "/dashboard",
@@ -38,7 +38,7 @@ export async function requestDelivery(
     return { success: false, error: "Please sign in to request a delivery." }
   }
 
-  const supabase = createServiceRoleClient()
+  const supabase = await createClient()
 
   const { data: profile } = await supabase
     .from("profiles")
