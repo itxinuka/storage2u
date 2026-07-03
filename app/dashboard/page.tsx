@@ -16,11 +16,15 @@ export default async function DashboardPage() {
 
   const supabase = await createClient()
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, university")
     .eq("clerk_user_id", userId)
     .maybeSingle()
+
+  if (profileError) {
+    console.error("[dashboard] profile query failed:", profileError.message)
+  }
 
   let bookings: BookingWithItems[] = []
   const outForDeliveryIds = new Set<string>()

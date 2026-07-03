@@ -4,7 +4,11 @@ const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
 
 const authorizedParties =
   process.env.NODE_ENV === "production"
-    ? ["https://www.storage2u.ca", "https://accounts.storage2u.ca"]
+    ? [
+        "https://www.storage2u.ca",
+        "https://storage2u.ca",
+        "https://accounts.storage2u.ca",
+      ]
     : ["http://localhost:3000"];
 
 export default clerkMiddleware(async (auth, req) => {
