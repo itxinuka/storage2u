@@ -371,26 +371,6 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
   const [mode, setMode] = useState<BookingMode>(defaultDraft.mode)
   const [step, setStep] = useState(defaultDraft.step)
 
-  // #region agent log
-  fetch("http://127.0.0.1:7436/ingest/9b96a905-af14-4756-8795-b4973701d367", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "e1306e" },
-    body: JSON.stringify({
-      sessionId: "e1306e",
-      location: "booking-wizard.tsx:BookingWizard render",
-      message: "BookingWizard render state",
-      data: {
-        step,
-        showModeToggle: step === 0,
-        hasWindow: typeof window !== "undefined",
-        initialMode,
-      },
-      timestamp: Date.now(),
-      runId: "post-fix",
-      hypothesisId: "B",
-    }),
-  }).catch(() => {})
-  // #endregion
   const [done, setDone] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [pendingSubmit, setPendingSubmit] = useState(false)
@@ -472,21 +452,6 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
     setStep(stored.step)
     setForm(stored.form)
     setDraftHydrated(true)
-    // #region agent log
-    fetch("http://127.0.0.1:7436/ingest/9b96a905-af14-4756-8795-b4973701d367", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "e1306e" },
-      body: JSON.stringify({
-        sessionId: "e1306e",
-        location: "booking-wizard.tsx:restoreDraft effect",
-        message: "Draft restored after mount",
-        data: { step: stored.step, mode: stored.mode },
-        timestamp: Date.now(),
-        runId: "post-fix",
-        hypothesisId: "A",
-      }),
-    }).catch(() => {})
-    // #endregion
   }, [initialMode])
 
   useEffect(() => {

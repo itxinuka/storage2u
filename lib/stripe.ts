@@ -138,22 +138,30 @@ export async function createSubscriptionCheckout(
   const stripe = getStripe()
   if (!stripe || input.lineItems.length === 0) return null
 
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: input.customerId,
-    line_items: input.lineItems.map((item) => ({
-      price: item.price,
-      quantity: item.quantity,
-    })),
-    success_url: input.successUrl,
-    cancel_url: input.cancelUrl,
-    client_reference_id: input.bookingId,
-    metadata: {
-      booking_id: input.bookingId,
-    },
-  })
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: input.customerId,
+      line_items: input.lineItems.map((item) => ({
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+      client_reference_id: input.bookingId,
+      metadata: {
+        booking_id: input.bookingId,
+      },
+    })
 
-  return session.url
+    return session.url
+  } catch (err) {
+    console.error(
+      "[stripe] checkout.sessions.create failed:",
+      err instanceof Error ? err.message : err
+    )
+    return null
+  }
 }
 
 export async function addToExistingSubscription(

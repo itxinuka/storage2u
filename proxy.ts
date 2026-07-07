@@ -2,14 +2,20 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
 
+const productionOrigins = [
+  "https://www.storage2u.ca",
+  "https://storage2u.ca",
+  "https://accounts.storage2u.ca",
+]
+
+if (process.env.VERCEL_URL) {
+  productionOrigins.push(`https://${process.env.VERCEL_URL}`)
+}
+
 const authorizedParties =
   process.env.NODE_ENV === "production"
-    ? [
-        "https://www.storage2u.ca",
-        "https://storage2u.ca",
-        "https://accounts.storage2u.ca",
-      ]
-    : ["http://localhost:3000"];
+    ? productionOrigins
+    : ["http://localhost:3000"]
 
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {

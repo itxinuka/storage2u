@@ -21,6 +21,7 @@ import {
   retrieveCheckoutSession,
 } from "@/lib/stripe"
 import { createClient } from "@/lib/server"
+import { debugLog } from "@/lib/debug-log"
 
 type BookingItemKind = Database["public"]["Enums"]["booking_item_kind"]
 type BookingModeDb = Database["public"]["Enums"]["booking_mode"]
@@ -56,14 +57,31 @@ function toDbMode(mode: BookingMode): BookingModeDb {
 
 async function getOrigin(): Promise<string> {
   const headerList = await headers()
+  const origin = headerList.get("origin")
+  if (origin) return origin
+
   const host = headerList.get("host")
   const proto = headerList.get("x-forwarded-proto") ?? "https"
-  return headerList.get("origin") ?? (host ? `${proto}://${host}` : "")
+  if (host) return `${proto}://${host}`
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")
+  }
+
+  return "http://localhost:3000"
 }
 
 export async function createBooking(
   input: CreateBookingInput
 ): Promise<CreateBookingResult> {
+  // #region agent log
+  debugLog("actions.ts:createBooking", "entry", { mode: input.mode }, "A")
+  // #endregion
+  try {
   const { userId } = await auth()
   if (!userId) {
     return { success: false, error: "Please sign in to complete your booking.", code: "auth" }
@@ -110,6 +128,14 @@ export async function createBooking(
     .single()
 
   if (profileError || !profile) {
+    // #region agent log
+    debugLog(
+      "actions.ts:createBooking",
+      "profile upsert failed",
+      { code: profileError?.code, message: profileError?.message },
+      "A"
+    )
+    // #endregion
     return {
       success: false,
       error: profileError?.message ?? "Could not create your profile.",
@@ -136,6 +162,14 @@ export async function createBooking(
     .single()
 
   if (bookingError || !booking) {
+    // #region agent log
+    debugLog(
+      "actions.ts:createBooking",
+      "booking insert failed",
+      { code: bookingError?.code, message: bookingError?.message },
+      "D"
+    )
+    // #endregion
     return {
       success: false,
       error: bookingError?.message ?? "Could not save your booking.",
@@ -159,12 +193,36 @@ export async function createBooking(
   }
 
   revalidatePath("/dashboard")
+  // #region agent log
+  debugLog("actions.ts:createBooking", "success", { bookingId: booking.id }, "A")
+  // #endregion
   return { success: true, bookingId: booking.id }
+  } catch (err) {
+    // #region agent log
+    debugLog(
+      "actions.ts:createBooking",
+      "uncaught throw",
+      { message: err instanceof Error ? err.message : String(err) },
+      "A"
+    )
+    // #endregion
+    return {
+      success: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "Something went wrong saving your booking.",
+    }
+  }
 }
 
 export async function createCheckoutSession(
   bookingId: string
 ): Promise<CheckoutSessionResult> {
+  // #region agent log
+  debugLog("actions.ts:createCheckoutSession", "entry", { bookingId }, "B")
+  // #endregion
+  try {
   const { userId } = await auth()
   if (!userId) {
     return { success: false, error: "Please sign in to continue.", code: "auth" }
@@ -271,6 +329,14 @@ export async function createCheckoutSession(
     ).data.length > 0
 
   const origin = await getOrigin()
+  // #region agent log
+  debugLog(
+    "actions.ts:createCheckoutSession",
+    "resolved origin",
+    { origin, lineItemCount: stripeLineItems.length },
+    "E"
+  )
+  // #endregion
 
   if (hasActiveSubscription) {
     const result = await addToExistingSubscription(customerId, stripeLineItems)
@@ -318,6 +384,24 @@ export async function createCheckoutSession(
   }
 
   return { url: checkoutUrl }
+  } catch (err) {
+    // #region agent log
+    debugLog(
+      "actions.ts:createCheckoutSession",
+      "uncaught throw",
+      { message: err instanceof Error ? err.message : String(err) },
+      "B"
+    )
+    // #endregion
+    return {
+      success: false,
+      error:
+        err instanceof Error
+          ? err.message
+          : "Could not start checkout. Please try again.",
+      code: "stripe",
+    }
+  }
 }
 
 export async function verifyCheckoutSession(
