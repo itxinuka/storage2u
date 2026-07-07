@@ -1,11 +1,15 @@
 import "server-only"
 
 import type { SelectionMap } from "@/lib/booking-catalog"
+import { getStripe } from "@/lib/stripe"
 
 /**
- * Required env vars:
- * - STRIPE_SECRET_KEY — server API key
- * - STRIPE_WEBHOOK_SECRET — webhook signing secret
+ * Price resolution order for each catalog item:
+ *   1. STRIPE_PRICE_<ID> env var (explicit override)
+ *   2. Stripe price with lookup_key === catalog id (source of truth)
+ *   3. Hardcoded sandbox default (dev convenience only)
+ *
+ * Optional env vars (overrides):
  * - STRIPE_PRICE_SMALL, STRIPE_PRICE_MEDIUM, STRIPE_PRICE_LARGE
  * - STRIPE_PRICE_MATTRESS, STRIPE_PRICE_FRIDGE, STRIPE_PRICE_BIKE
  * - STRIPE_PRICE_SUITCASE, STRIPE_PRICE_BACKPACK, STRIPE_PRICE_MONITOR
@@ -50,28 +54,66 @@ const DEFAULT_PRICE_IDS: Record<CatalogId, string> = {
   monitor: "price_1TpI8YRt5Yna6OxDAkQ1Drfp",
 }
 
-function resolvePriceId(catalogId: CatalogId): string | null {
+/** Cache of catalog id -> resolved Stripe price id for the process lifetime. */
+const resolvedPriceCache = new Map<CatalogId, string>()
+
+/** Loads all lookup_key prices from Stripe once and populates the cache. */
+async function loadLookupKeyPrices(): Promise<void> {
+  const stripe = getStripe()
+  if (!stripe) return
+
+  const prices = await stripe.prices.list({
+    active: true,
+    limit: 100,
+    lookup_keys: [...CATALOG_IDS],
+  })
+
+  for (const price of prices.data) {
+    const key = price.lookup_key
+    if (key && CATALOG_IDS.includes(key as CatalogId)) {
+      resolvedPriceCache.set(key as CatalogId, price.id)
+    }
+  }
+}
+
+async function resolvePriceId(catalogId: CatalogId): Promise<string | null> {
   const envKey = ENV_KEYS[catalogId]
   const fromEnv = process.env[envKey]?.trim()
   if (fromEnv) return fromEnv
-  if (process.env.NODE_ENV === "production") return null
-  return DEFAULT_PRICE_IDS[catalogId]
+
+  if (resolvedPriceCache.has(catalogId)) {
+    return resolvedPriceCache.get(catalogId) ?? null
+  }
+
+  try {
+    await loadLookupKeyPrices()
+  } catch {
+    // Fall through to defaults below.
+  }
+
+  if (resolvedPriceCache.has(catalogId)) {
+    return resolvedPriceCache.get(catalogId) ?? null
+  }
+
+  return DEFAULT_PRICE_IDS[catalogId] ?? null
 }
 
-export function getStripePriceId(catalogId: string): string | null {
+export async function getStripePriceId(
+  catalogId: string
+): Promise<string | null> {
   if (!CATALOG_IDS.includes(catalogId as CatalogId)) return null
   return resolvePriceId(catalogId as CatalogId)
 }
 
 export type StripeLineItem = { price: string; quantity: number }
 
-export function selectionToStripeLineItems(
+export async function selectionToStripeLineItems(
   selection: SelectionMap
-): StripeLineItem[] {
+): Promise<StripeLineItem[]> {
   const items: StripeLineItem[] = []
   for (const [catalogId, qty] of Object.entries(selection)) {
     if (qty <= 0) continue
-    const priceId = getStripePriceId(catalogId)
+    const priceId = await getStripePriceId(catalogId)
     if (!priceId) {
       throw new Error(`No Stripe price configured for catalog item "${catalogId}".`)
     }
@@ -80,13 +122,13 @@ export function selectionToStripeLineItems(
   return items
 }
 
-export function bookingItemsToStripeLineItems(
+export async function bookingItemsToStripeLineItems(
   items: Array<{ catalog_id: string; qty: number }>
-): StripeLineItem[] {
+): Promise<StripeLineItem[]> {
   const itemsByPrice = new Map<string, number>()
   for (const item of items) {
     if (item.qty <= 0) continue
-    const priceId = getStripePriceId(item.catalog_id)
+    const priceId = await getStripePriceId(item.catalog_id)
     if (!priceId) {
       throw new Error(
         `No Stripe price configured for catalog item "${item.catalog_id}".`
