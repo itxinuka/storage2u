@@ -222,7 +222,7 @@ export async function createCheckoutSession(
 
   let stripeLineItems
   try {
-    stripeLineItems = bookingItemsToStripeLineItems(
+    stripeLineItems = await bookingItemsToStripeLineItems(
       (booking.booking_items ?? []).map((item) => ({
         catalog_id: item.catalog_id,
         qty: item.qty,
@@ -282,11 +282,20 @@ export async function createCheckoutSession(
       }
     }
 
-    await finalizeBookingPayment({
+    const finalized = await finalizeBookingPayment({
       bookingId,
       stripeCustomerId: customerId,
       stripeSubscriptionId: result.subscriptionId,
     })
+
+    if (!finalized) {
+      return {
+        success: false,
+        error:
+          "Your subscription was updated, but we couldn't confirm your booking. Please contact hello@storage2u.ca.",
+        code: "stripe",
+      }
+    }
 
     revalidatePath("/dashboard")
     return { url: `${origin}/book/complete?booking_id=${bookingId}` }
@@ -361,11 +370,19 @@ export async function verifyCheckoutSession(
     return { success: false, error: "We couldn't find that booking." }
   }
 
-  await finalizeBookingPayment({
+  const finalized = await finalizeBookingPayment({
     bookingId,
     stripeCustomerId: customerId,
     stripeSubscriptionId: subscriptionId,
   })
+
+  if (!finalized) {
+    return {
+      success: false,
+      error:
+        "Payment succeeded but we couldn't confirm your booking. Please try again or contact support.",
+    }
+  }
 
   revalidatePath("/dashboard")
   return { success: true, bookingId }

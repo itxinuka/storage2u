@@ -19,7 +19,7 @@ function requireSupabasePublicEnv() {
 
 async function getClerkSupabaseToken(): Promise<string | null> {
   try {
-    return (await auth()).getToken()
+    return (await auth()).getToken({ template: "supabase" })
   } catch (error) {
     console.error("[supabase] Clerk getToken failed:", error)
     return null
