@@ -8,6 +8,7 @@ type ProfileDisplay = {
 }
 
 const ACTIVE_STATUSES = new Set<BookingWithItems["status"]>([
+  "pending_payment",
   "scheduled",
   "picked_up",
   "in_storage",
@@ -37,6 +38,7 @@ function formatCurrency(cents: number): string {
 }
 
 function mapStatus(status: BookingWithItems["status"]): StorageStatus {
+  if (status === "pending_payment") return "pending_payment"
   return status
 }
 

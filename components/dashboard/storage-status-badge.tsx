@@ -6,6 +6,7 @@ export type StorageStatus =
   | "picked_up"
   | "delivered"
   | "pending"
+  | "pending_payment"
   | "scheduled"
   | "cancelled"
   | "out_for_delivery"
@@ -32,6 +33,10 @@ const config: Record<
   },
   pending: {
     label: "Pending",
+    className: "border-transparent bg-amber-100 text-amber-800",
+  },
+  pending_payment: {
+    label: "Payment pending",
     className: "border-transparent bg-amber-100 text-amber-800",
   },
   scheduled: {

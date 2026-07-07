@@ -30,6 +30,7 @@ export type AdminBooking = {
 
 const STATUS_TABS = [
   { value: "all", label: "All" },
+  { value: "pending_payment", label: "Payment Pending" },
   { value: "scheduled", label: "Scheduled" },
   { value: "picked_up", label: "Picked Up" },
   { value: "in_storage", label: "In Storage" },
@@ -41,6 +42,10 @@ const STATUS_BADGE: Record<
   BookingStatus,
   { label: string; className: string }
 > = {
+  pending_payment: {
+    label: "Payment Pending",
+    className: "border-amber-200 bg-amber-50 text-amber-700",
+  },
   scheduled: {
     label: "Scheduled",
     className: "border-amber-200 bg-amber-50 text-amber-700",

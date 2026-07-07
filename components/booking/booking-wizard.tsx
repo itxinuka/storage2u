@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { useAuth, useClerk, useUser } from "@clerk/nextjs"
 import {
   ArrowRight,
@@ -20,7 +21,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
-import { createBooking } from "@/app/book/actions"
+import { createBooking, createCheckoutSession } from "@/app/book/actions"
 import { ItemIcon } from "@/components/booking/item-icon"
 import { StepIndicator } from "@/components/booking/step-indicator"
 import { Logo } from "@/components/logo"
@@ -364,6 +365,7 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
   const { isSignedIn } = useAuth()
   const { user } = useUser()
   const { openSignIn } = useClerk()
+  const searchParams = useSearchParams()
 
   const defaultDraft = useMemo(() => createDefaultDraft(initialMode), [initialMode])
   const [mode, setMode] = useState<BookingMode>(defaultDraft.mode)
@@ -439,11 +441,16 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
         return
       }
 
+      const checkout = await createCheckoutSession(result.bookingId)
+      if ("url" in checkout) {
+        setPendingSubmit(false)
+        sessionStorage.removeItem(BOOKING_DRAFT_KEY)
+        window.location.href = checkout.url
+        return
+      }
+
       setPendingSubmit(false)
-      sessionStorage.removeItem(BOOKING_DRAFT_KEY)
-      setBookingId(result.bookingId)
-      setDone(true)
-      setStep(5)
+      toast.error(checkout.error)
     } catch {
       setPendingSubmit(false)
       toast.error("Something went wrong. Please try again.")
@@ -451,6 +458,13 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
       setSubmitting(false)
     }
   }, [form, mode, openSignIn])
+
+  useEffect(() => {
+    if (searchParams.get("checkout") === "cancelled") {
+      toast.error("Payment cancelled. Your booking is saved — complete checkout when ready.")
+      setStep(4)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     const stored = readStoredBookingDraft(initialMode)
@@ -887,55 +901,32 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
               {step === 4 ? (
                 <div>
                   <StepHead
-                    title="Add a payment method"
+                    title="Secure checkout"
                     sub="You're billed monthly for the boxes you store. Cancel anytime — no penalties."
                   />
-                  <div className="mb-5 flex gap-2">
-                    {["Card", "Apple Pay", "Google Pay"].map((t, i) => (
-                      <div
-                        key={t}
-                        className={cn(
-                          "flex-1 rounded-2xl py-3 text-center text-sm font-bold transition-shadow",
-                          i === 0
-                            ? "bg-purple-50 text-primary shadow-[inset_0_0_0_2px_var(--color-primary)]"
-                            : "bg-card text-muted-foreground shadow-[inset_0_0_0_1.5px_var(--color-border)]"
-                        )}
-                      >
-                        {t}
-                      </div>
-                    ))}
-                  </div>
                   <div className="space-y-4">
-                    <div>
-                      <FieldLabel>Card number</FieldLabel>
-                      <Input className={FIELD_CLASS} defaultValue="4242 4242 4242 4242" readOnly />
+                    <div className="rounded-3xl bg-muted px-5 py-4">
+                      <p className="text-sm text-muted-foreground">Monthly total</p>
+                      <p className="text-3xl font-extrabold text-foreground">
+                        ${totals.total}
+                        <span className="text-base font-medium text-muted-foreground">/mo</span>
+                      </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <FieldLabel>Expiry</FieldLabel>
-                        <Input className={FIELD_CLASS} defaultValue="09 / 28" readOnly />
-                      </div>
-                      <div>
-                        <FieldLabel>CVC</FieldLabel>
-                        <Input className={FIELD_CLASS} defaultValue="•••" readOnly />
-                      </div>
-                    </div>
-                    <div>
-                      <FieldLabel>Name on card</FieldLabel>
-                      <Input className={FIELD_CLASS} placeholder="Name on card" readOnly />
-                    </div>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
+                        Billed today, then monthly on the 1st
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
+                        Pay with card, Apple Pay, or Google Pay via Stripe
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
+                        Your booking details are saved before checkout
+                      </li>
+                    </ul>
                   </div>
-                  <div className="mt-5 flex items-center justify-between rounded-3xl bg-muted px-5 py-4">
-                    <span className="text-sm text-muted-foreground">Billed today, then monthly</span>
-                    <span className="text-xl font-extrabold text-foreground">
-                      ${totals.total}
-                      <span className="text-sm font-medium text-muted-foreground">/mo</span>
-                    </span>
-                  </div>
-                  <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                    <ShieldCheck className="h-4 w-4 shrink-0" />
-                    Payments are stubbed for now — your booking saves without charging a card.
-                  </p>
                 </div>
               ) : null}
 
@@ -966,7 +957,7 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
                     disabled={submitting}
                   >
                     <Check className="h-4 w-4" />
-                    {submitting ? "Booking…" : M.payCta}
+                    {submitting ? "Redirecting…" : "Continue to secure checkout"}
                   </Button>
                 )}
               </div>

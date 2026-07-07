@@ -65,6 +65,7 @@ export type Database = {
           residence: string | null
           status: Database["public"]["Enums"]["booking_status"]
           stripe_payment_id: string | null
+          stripe_subscription_id: string | null
           time_window: string | null
           university: string | null
         }
@@ -82,6 +83,7 @@ export type Database = {
           residence?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           stripe_payment_id?: string | null
+          stripe_subscription_id?: string | null
           time_window?: string | null
           university?: string | null
         }
@@ -99,6 +101,7 @@ export type Database = {
           residence?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           stripe_payment_id?: string | null
+          stripe_subscription_id?: string | null
           time_window?: string | null
           university?: string | null
         }
@@ -223,6 +226,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          stripe_customer_id: string | null
           university: string | null
         }
         Insert: {
@@ -232,6 +236,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          stripe_customer_id?: string | null
           university?: string | null
         }
         Update: {
@@ -241,6 +246,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          stripe_customer_id?: string | null
           university?: string | null
         }
         Relationships: []
@@ -500,6 +506,7 @@ export type Database = {
       booking_item_kind: "box" | "item"
       booking_mode: "pickup" | "delivery"
       booking_status:
+        | "pending_payment"
         | "scheduled"
         | "picked_up"
         | "in_storage"

@@ -2,6 +2,8 @@ import "server-only"
 
 import Stripe from "stripe"
 
+import type { StripeLineItem } from "@/lib/stripe-prices"
+
 let cached: Stripe | null = null
 
 /** Returns a configured Stripe client, or null when STRIPE_SECRET_KEY is unset. */
@@ -14,12 +16,24 @@ export function getStripe(): Stripe | null {
   return cached
 }
 
-async function findCustomerId(
+export async function findCustomerId(
   stripe: Stripe,
   email: string
 ): Promise<string | null> {
   const customers = await stripe.customers.list({ email, limit: 1 })
   return customers.data[0]?.id ?? null
+}
+
+export async function getActiveSubscription(
+  stripe: Stripe,
+  customerId: string
+): Promise<Stripe.Subscription | null> {
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "active",
+    limit: 1,
+  })
+  return subscriptions.data[0] ?? null
 }
 
 /**
@@ -80,4 +94,125 @@ export async function createBillingPortalUrl(
   } catch {
     return null
   }
+}
+
+type GetOrCreateCustomerInput = {
+  email: string
+  name: string | null
+  clerkUserId: string
+  existingStripeCustomerId?: string | null
+}
+
+export async function getOrCreateCustomer(
+  input: GetOrCreateCustomerInput
+): Promise<string | null> {
+  const stripe = getStripe()
+  if (!stripe) return null
+
+  if (input.existingStripeCustomerId) {
+    return input.existingStripeCustomerId
+  }
+
+  const existingId = await findCustomerId(stripe, input.email)
+  if (existingId) return existingId
+
+  const customer = await stripe.customers.create({
+    email: input.email,
+    name: input.name ?? undefined,
+    metadata: { clerk_user_id: input.clerkUserId },
+  })
+  return customer.id
+}
+
+type CreateSubscriptionCheckoutInput = {
+  customerId: string
+  lineItems: StripeLineItem[]
+  bookingId: string
+  successUrl: string
+  cancelUrl: string
+}
+
+export async function createSubscriptionCheckout(
+  input: CreateSubscriptionCheckoutInput
+): Promise<string | null> {
+  const stripe = getStripe()
+  if (!stripe || input.lineItems.length === 0) return null
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer: input.customerId,
+    line_items: input.lineItems.map((item) => ({
+      price: item.price,
+      quantity: item.quantity,
+    })),
+    success_url: input.successUrl,
+    cancel_url: input.cancelUrl,
+    client_reference_id: input.bookingId,
+    metadata: {
+      booking_id: input.bookingId,
+    },
+  })
+
+  return session.url
+}
+
+export async function addToExistingSubscription(
+  customerId: string,
+  lineItems: StripeLineItem[]
+): Promise<{ subscriptionId: string } | null> {
+  const stripe = getStripe()
+  if (!stripe || lineItems.length === 0) return null
+
+  const subscription = await getActiveSubscription(stripe, customerId)
+  if (!subscription) return null
+
+  const existingByPrice = new Map<string, Stripe.SubscriptionItem>()
+  for (const item of subscription.items.data) {
+    if (item.price.id) {
+      existingByPrice.set(item.price.id, item)
+    }
+  }
+
+  for (const lineItem of lineItems) {
+    const existing = existingByPrice.get(lineItem.price)
+    if (existing) {
+      await stripe.subscriptionItems.update(existing.id, {
+        quantity: (existing.quantity ?? 0) + lineItem.quantity,
+        proration_behavior: "create_prorations",
+      })
+    } else {
+      await stripe.subscriptionItems.create({
+        subscription: subscription.id,
+        price: lineItem.price,
+        quantity: lineItem.quantity,
+        proration_behavior: "create_prorations",
+      })
+    }
+  }
+
+  return { subscriptionId: subscription.id }
+}
+
+export async function retrieveCheckoutSession(
+  sessionId: string
+): Promise<Stripe.Checkout.Session | null> {
+  const stripe = getStripe()
+  if (!stripe) return null
+
+  try {
+    return await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["subscription"],
+    })
+  } catch {
+    return null
+  }
+}
+
+export function getSubscriptionIdFromSession(
+  session: Stripe.Checkout.Session
+): string | null {
+  if (typeof session.subscription === "string") {
+    return session.subscription
+  }
+  return session.subscription?.id ?? null
 }
