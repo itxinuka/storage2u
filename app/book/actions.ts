@@ -20,7 +20,8 @@ import {
   getSubscriptionIdFromSession,
   retrieveCheckoutSession,
 } from "@/lib/stripe"
-import { createClient } from "@/lib/server"
+import { humanizeBookingError } from "@/lib/booking-action-errors"
+import { createServiceRoleClient } from "@/lib/supabase/service"
 import { debugLog } from "@/lib/debug-log"
 
 type BookingItemKind = Database["public"]["Enums"]["booking_item_kind"]
@@ -75,6 +76,59 @@ async function getOrigin(): Promise<string> {
   return "http://localhost:3000"
 }
 
+/** Trusted server actions use service role after Clerk auth() gates access. */
+function createBookingDb() {
+  try {
+    return createServiceRoleClient()
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    throw new Error(message)
+  }
+}
+
+type BookingIdentity = {
+  userId: string
+  email: string | null
+  fullName: string | null
+}
+
+/** Prefer session claims so checkout doesn't depend on a Clerk Users API round-trip. */
+async function resolveBookingIdentity(): Promise<BookingIdentity | null> {
+  const { userId, sessionClaims } = await auth()
+  if (!userId) return null
+
+  const claims = sessionClaims as {
+    email?: string
+    first_name?: string
+    last_name?: string
+  } | null
+
+  let email = claims?.email ?? null
+  let fullName =
+    [claims?.first_name, claims?.last_name].filter(Boolean).join(" ") || null
+
+  if (!email) {
+    try {
+      const user = await currentUser()
+      email =
+        user?.primaryEmailAddress?.emailAddress ??
+        user?.emailAddresses[0]?.emailAddress ??
+        null
+      fullName =
+        [user?.firstName, user?.lastName].filter(Boolean).join(" ") || fullName
+    } catch (err) {
+      debugLog(
+        "actions.ts:resolveBookingIdentity",
+        "currentUser failed",
+        { message: err instanceof Error ? err.message : String(err) },
+        "A"
+      )
+    }
+  }
+
+  return { userId, email, fullName }
+}
+
 export async function createBooking(
   input: CreateBookingInput
 ): Promise<CreateBookingResult> {
@@ -82,12 +136,12 @@ export async function createBooking(
   debugLog("actions.ts:createBooking", "entry", { mode: input.mode }, "A")
   // #endregion
   try {
-  const { userId } = await auth()
-  if (!userId) {
+  const identity = await resolveBookingIdentity()
+  if (!identity) {
     return { success: false, error: "Please sign in to complete your booking.", code: "auth" }
   }
 
-  const user = await currentUser()
+  const { userId, email, fullName } = identity
   const lineItems = selectionToLineItems(input.selection)
   const { total, count } = computeSelectionTotals(input.selection)
 
@@ -103,14 +157,7 @@ export async function createBooking(
     return { success: false, error: "Please pick a date and time window.", code: "validation" }
   }
 
-  const supabase = await createClient()
-
-  const fullName =
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") || null
-  const email =
-    user?.primaryEmailAddress?.emailAddress ??
-    user?.emailAddresses[0]?.emailAddress ??
-    null
+  const supabase = createBookingDb()
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
@@ -138,7 +185,10 @@ export async function createBooking(
     // #endregion
     return {
       success: false,
-      error: profileError?.message ?? "Could not create your profile.",
+      error: humanizeBookingError(
+        profileError?.message,
+        "Could not create your profile."
+      ),
     }
   }
 
@@ -172,7 +222,10 @@ export async function createBooking(
     // #endregion
     return {
       success: false,
-      error: bookingError?.message ?? "Could not save your booking.",
+      error: humanizeBookingError(
+        bookingError?.message,
+        "Could not save your booking."
+      ),
     }
   }
 
@@ -189,7 +242,10 @@ export async function createBooking(
 
   if (itemsError) {
     await supabase.from("bookings").delete().eq("id", booking.id)
-    return { success: false, error: itemsError.message }
+    return {
+      success: false,
+      error: humanizeBookingError(itemsError.message, "Could not save your items."),
+    }
   }
 
   revalidatePath("/dashboard")
@@ -208,10 +264,10 @@ export async function createBooking(
     // #endregion
     return {
       success: false,
-      error:
-        err instanceof Error
-          ? err.message
-          : "Something went wrong saving your booking.",
+      error: humanizeBookingError(
+        err instanceof Error ? err.message : undefined,
+        "Something went wrong saving your booking."
+      ),
     }
   }
 }
@@ -223,10 +279,12 @@ export async function createCheckoutSession(
   debugLog("actions.ts:createCheckoutSession", "entry", { bookingId }, "B")
   // #endregion
   try {
-  const { userId } = await auth()
-  if (!userId) {
+  const identity = await resolveBookingIdentity()
+  if (!identity) {
     return { success: false, error: "Please sign in to continue.", code: "auth" }
   }
+
+  const { userId, email, fullName } = identity
 
   const stripe = getStripe()
   if (!stripe) {
@@ -237,26 +295,21 @@ export async function createCheckoutSession(
     }
   }
 
-  const user = await currentUser()
-  const email =
-    user?.primaryEmailAddress?.emailAddress ??
-    user?.emailAddresses[0]?.emailAddress ??
-    null
-
-  if (!email) {
-    return { success: false, error: "No email on file for billing.", code: "validation" }
-  }
-
-  const supabase = await createClient()
+  const supabase = createBookingDb()
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, stripe_customer_id")
+    .select("id, stripe_customer_id, email")
     .eq("clerk_user_id", userId)
     .maybeSingle()
 
   if (!profile) {
     return { success: false, error: "We couldn't find your account.", code: "validation" }
+  }
+
+  const billingEmail = email ?? profile.email
+  if (!billingEmail) {
+    return { success: false, error: "No email on file for billing.", code: "validation" }
   }
 
   const { data: booking } = await supabase
@@ -289,16 +342,16 @@ export async function createCheckoutSession(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Invalid booking items.",
+      error: humanizeBookingError(
+        err instanceof Error ? err.message : undefined,
+        "Invalid booking items."
+      ),
       code: "validation",
     }
   }
 
-  const fullName =
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") || null
-
   const customerId = await getOrCreateCustomer({
-    email,
+    email: billingEmail,
     name: fullName,
     clerkUserId: userId,
     existingStripeCustomerId: profile.stripe_customer_id,
@@ -317,16 +370,38 @@ export async function createCheckoutSession(
       .from("profiles")
       .update({ stripe_customer_id: customerId })
       .eq("id", profile.id)
+  } else if (profile.stripe_customer_id !== customerId) {
+    await supabase
+      .from("profiles")
+      .update({ stripe_customer_id: customerId })
+      .eq("id", profile.id)
   }
 
-  const hasActiveSubscription =
-    (
-      await stripe.subscriptions.list({
-        customer: customerId,
-        status: "active",
-        limit: 1,
-      })
-    ).data.length > 0
+  let hasActiveSubscription = false
+  try {
+    hasActiveSubscription =
+      (
+        await stripe.subscriptions.list({
+          customer: customerId,
+          status: "active",
+          limit: 1,
+        })
+      ).data.length > 0
+  } catch (err) {
+    // #region agent log
+    debugLog(
+      "actions.ts:createCheckoutSession",
+      "subscription list failed",
+      { message: err instanceof Error ? err.message : String(err), customerId },
+      "B"
+    )
+    // #endregion
+    return {
+      success: false,
+      error: "Could not verify your billing account. Please try again.",
+      code: "stripe",
+    }
+  }
 
   const origin = await getOrigin()
   // #region agent log
@@ -395,10 +470,10 @@ export async function createCheckoutSession(
     // #endregion
     return {
       success: false,
-      error:
-        err instanceof Error
-          ? err.message
-          : "Could not start checkout. Please try again.",
+      error: humanizeBookingError(
+        err instanceof Error ? err.message : undefined,
+        "Could not start checkout. Please try again."
+      ),
       code: "stripe",
     }
   }
@@ -433,7 +508,7 @@ export async function verifyCheckoutSession(
     return { success: false, error: "Missing payment details." }
   }
 
-  const supabase = await createClient()
+  const supabase = createBookingDb()
   const { data: profile } = await supabase
     .from("profiles")
     .select("id")
@@ -476,7 +551,7 @@ export async function getBookingForConfirmation(bookingId: string) {
   const { userId } = await auth()
   if (!userId) return null
 
-  const supabase = await createClient()
+  const supabase = createBookingDb()
   const { data: profile } = await supabase
     .from("profiles")
     .select("id")

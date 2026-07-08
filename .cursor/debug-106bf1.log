@@ -1,0 +1,4 @@
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"entry","data":{"mode":"pickup"},"hypothesisId":"A","timestamp":1783475171462}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"success","data":{"bookingId":"4280a922-4e1c-4061-b46f-802d5a1a699c"},"hypothesisId":"A","timestamp":1783475173949}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"entry","data":{"bookingId":"4280a922-4e1c-4061-b46f-802d5a1a699c"},"hypothesisId":"B","timestamp":1783475174048}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"resolved origin","data":{"origin":"http://localhost:3000","lineItemCount":1},"hypothesisId":"E","timestamp":1783475175606}

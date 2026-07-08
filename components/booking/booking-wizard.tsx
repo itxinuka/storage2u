@@ -417,12 +417,15 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
           return
         }
         setPendingSubmit(false)
-        toast.error(result.error)
+        console.error("[booking] createBooking failed", result)
+        toast.error(
+          result.error ?? "Could not save your booking. Please try again."
+        )
         return
       }
 
       const checkout = await createCheckoutSession(result.bookingId)
-      if ("url" in checkout) {
+      if ("url" in checkout && checkout.url) {
         setPendingSubmit(false)
         sessionStorage.removeItem(BOOKING_DRAFT_KEY)
         window.location.href = checkout.url
@@ -430,9 +433,14 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
       }
 
       setPendingSubmit(false)
-      toast.error(checkout.error)
-    } catch {
+      console.error("[booking] createCheckoutSession failed", checkout)
+      toast.error(
+        ("error" in checkout && checkout.error) ||
+          "Could not start checkout. Please refresh and try again."
+      )
+    } catch (err) {
       setPendingSubmit(false)
+      console.error("[booking] submitBooking threw", err)
       toast.error("Something went wrong. Please try again.")
     } finally {
       setSubmitting(false)

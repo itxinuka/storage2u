@@ -12,16 +12,21 @@ if (process.env.VERCEL_URL) {
   productionOrigins.push(`https://${process.env.VERCEL_URL}`)
 }
 
+const devOrigins = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+]
+
 const authorizedParties =
   process.env.NODE_ENV === "production"
     ? productionOrigins
-    : ["http://localhost:3000"]
+    : devOrigins
 
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
     await auth.protect();
   }
-}, { authorizedParties });
+}, process.env.NODE_ENV === "production" ? { authorizedParties } : {});
 
 export const config = {
   matcher: [

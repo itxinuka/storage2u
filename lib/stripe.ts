@@ -110,7 +110,16 @@ export async function getOrCreateCustomer(
   if (!stripe) return null
 
   if (input.existingStripeCustomerId) {
-    return input.existingStripeCustomerId
+    try {
+      const existing = await stripe.customers.retrieve(
+        input.existingStripeCustomerId
+      )
+      if (!existing.deleted) {
+        return existing.id
+      }
+    } catch {
+      // Stale customer id — fall through to lookup/create.
+    }
   }
 
   const existingId = await findCustomerId(stripe, input.email)
