@@ -31,3 +31,17 @@
 {"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"entry","data":{"bookingId":"5e1afb7a-925f-43dd-a390-612f35bd1880"},"hypothesisId":"B","timestamp":1783867661210}
 {"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"resolved origin","data":{"origin":"http://localhost:3000","lineItemCount":2},"hypothesisId":"E","timestamp":1783867662441}
 {"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783867946446}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868464455}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868465185}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868465222}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868465318}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868465368}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868465519}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868467876}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868468101}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868468136}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868468252}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868468293}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868468337}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868470764}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868470822}

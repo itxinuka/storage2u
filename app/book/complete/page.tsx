@@ -3,7 +3,7 @@ import Link from "next/link"
 import {
   getBookingForConfirmation,
   verifyCheckoutSession,
-} from "@/app/book/actions"
+} from "@/lib/booking-complete"
 import { BookingConfirmation } from "@/components/booking/booking-confirmation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
