@@ -101,5 +101,33 @@ export async function getBookingForConfirmation(bookingId: string) {
     .eq("profile_id", profile.id)
     .maybeSingle()
 
+  if (!booking) return null
+  if (booking.status === "pending_payment") return null
+
+  return booking
+}
+
+export async function getBookingForPaymentConfirmation(bookingId: string) {
+  const { userId } = await auth()
+  if (!userId) return null
+
+  const supabase = createServiceRoleClient()
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("clerk_user_id", userId)
+    .maybeSingle()
+
+  if (!profile) return null
+
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select("*, booking_items(*)")
+    .eq("id", bookingId)
+    .eq("profile_id", profile.id)
+    .maybeSingle()
+
+  if (!booking || booking.status !== "pending_payment") return null
+
   return booking
 }

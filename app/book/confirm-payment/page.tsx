@@ -1,57 +1,41 @@
 import Link from "next/link"
 
-import {
-  getBookingForConfirmation,
-  verifyCheckoutSession,
-} from "@/lib/booking-complete"
-import { BookingConfirmation } from "@/components/booking/booking-confirmation"
+import { ConfirmSubscriptionPayment } from "@/components/booking/confirm-subscription-payment"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Logo } from "@/components/logo"
+import { getBookingForPaymentConfirmation } from "@/lib/booking-complete"
 
-type CompletePageProps = {
-  searchParams: Promise<{ session_id?: string; booking_id?: string }>
+type ConfirmPaymentPageProps = {
+  searchParams: Promise<{ booking_id?: string }>
 }
 
-export default async function BookCompletePage({ searchParams }: CompletePageProps) {
+export default async function ConfirmPaymentPage({ searchParams }: ConfirmPaymentPageProps) {
   const params = await searchParams
-  let bookingId = params.booking_id ?? null
-
-  if (params.session_id) {
-    const verified = await verifyCheckoutSession(params.session_id)
-    if (!verified.success) {
-      return (
-        <ErrorScreen
-          title="Payment not confirmed"
-          message={verified.error}
-        />
-      )
-    }
-    bookingId = verified.bookingId
-  }
+  const bookingId = params.booking_id
 
   if (!bookingId) {
     return (
       <ErrorScreen
         title="Booking not found"
-        message="We couldn't find your booking. Head back to the dashboard or try booking again."
+        message="We couldn't find your booking. Head back and try again."
       />
     )
   }
 
-  const booking = await getBookingForConfirmation(bookingId)
+  const booking = await getBookingForPaymentConfirmation(bookingId)
 
   if (!booking) {
     return (
       <ErrorScreen
-        title="Payment not confirmed"
-        message="This booking hasn't been paid yet. Return to booking to complete checkout."
+        title="Payment already completed"
+        message="This booking has already been paid or can't be confirmed. Check your dashboard for details."
       />
     )
   }
 
   return (
-    <BookingConfirmation
+    <ConfirmSubscriptionPayment
       booking={booking}
       mode={booking.mode === "delivery" ? "delivery" : "pickup"}
     />

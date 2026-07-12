@@ -295,6 +295,135 @@ export async function createBooking(
   }
 }
 
+export type ConfirmSubscriptionBookingResult =
+  | { success: true; bookingId: string }
+  | { success: false; error: string; code?: "auth" | "validation" | "stripe" }
+
+export async function confirmSubscriptionBooking(
+  bookingId: string
+): Promise<ConfirmSubscriptionBookingResult> {
+  try {
+    const identity = await resolveBookingIdentity()
+    if (!identity) {
+      return { success: false, error: "Please sign in to continue.", code: "auth" }
+    }
+
+    const stripe = getStripe()
+    if (!stripe) {
+      return {
+        success: false,
+        error: "Payments are not configured yet. Please try again later.",
+        code: "stripe",
+      }
+    }
+
+    const { userId } = identity
+    const supabase = createBookingDb()
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, stripe_customer_id")
+      .eq("clerk_user_id", userId)
+      .maybeSingle()
+
+    if (!profile?.stripe_customer_id) {
+      return { success: false, error: "We couldn't find your billing account.", code: "validation" }
+    }
+
+    const { data: booking } = await supabase
+      .from("bookings")
+      .select("id, profile_id, status, protection_plan, booking_items(catalog_id, qty)")
+      .eq("id", bookingId)
+      .maybeSingle()
+
+    if (!booking || booking.profile_id !== profile.id) {
+      return { success: false, error: "We couldn't find that booking.", code: "validation" }
+    }
+
+    if (booking.status === "scheduled") {
+      return { success: true, bookingId }
+    }
+
+    if (booking.status !== "pending_payment") {
+      return { success: false, error: "This booking can't be paid.", code: "validation" }
+    }
+
+    const subscriptions = await stripe.subscriptions.list({
+      customer: profile.stripe_customer_id,
+      status: "active",
+      limit: 1,
+    })
+    if (subscriptions.data.length === 0) {
+      return {
+        success: false,
+        error: "No active subscription found. Please restart checkout.",
+        code: "validation",
+      }
+    }
+
+    let stripeLineItems
+    try {
+      stripeLineItems = await appendProtectionLineItem(
+        await bookingItemsToStripeLineItems(
+          (booking.booking_items ?? []).map((item) => ({
+            catalog_id: item.catalog_id,
+            qty: item.qty,
+          }))
+        ),
+        booking.protection_plan
+      )
+    } catch (err) {
+      return {
+        success: false,
+        error: humanizeBookingError(
+          err instanceof Error ? err.message : undefined,
+          "Invalid booking items."
+        ),
+        code: "validation",
+      }
+    }
+
+    const result = await addToExistingSubscription(
+      profile.stripe_customer_id,
+      stripeLineItems
+    )
+    if (!result) {
+      return {
+        success: false,
+        error: "Could not update your subscription. Please try again.",
+        code: "stripe",
+      }
+    }
+
+    const finalized = await finalizeBookingPayment({
+      bookingId,
+      stripeCustomerId: profile.stripe_customer_id,
+      stripeSubscriptionId: result.subscriptionId,
+    })
+
+    if (!finalized) {
+      return {
+        success: false,
+        error:
+          "Your subscription was updated, but we couldn't confirm your booking. Please contact hello@storage2u.ca.",
+        code: "stripe",
+      }
+    }
+
+    revalidatePath("/dashboard")
+    return { success: true, bookingId }
+  } catch (err) {
+    return {
+      success: false,
+      error: humanizeBookingError(
+        err instanceof Error ? err.message : undefined,
+        "Could not confirm your booking. Please try again."
+      ),
+      code: "stripe",
+    }
+  }
+}
+
 export async function createCheckoutSession(
   bookingId: string
 ): Promise<CheckoutSessionResult> {
@@ -440,32 +569,7 @@ export async function createCheckoutSession(
   // #endregion
 
   if (hasActiveSubscription) {
-    const result = await addToExistingSubscription(customerId, stripeLineItems)
-    if (!result) {
-      return {
-        success: false,
-        error: "Could not update your subscription. Please try again.",
-        code: "stripe",
-      }
-    }
-
-    const finalized = await finalizeBookingPayment({
-      bookingId,
-      stripeCustomerId: customerId,
-      stripeSubscriptionId: result.subscriptionId,
-    })
-
-    if (!finalized) {
-      return {
-        success: false,
-        error:
-          "Your subscription was updated, but we couldn't confirm your booking. Please contact hello@storage2u.ca.",
-        code: "stripe",
-      }
-    }
-
-    revalidatePath("/dashboard")
-    return { url: `${origin}/book/complete?booking_id=${bookingId}` }
+    return { url: `${origin}/book/confirm-payment?booking_id=${bookingId}` }
   }
 
   const checkoutUrl = await createSubscriptionCheckout({
