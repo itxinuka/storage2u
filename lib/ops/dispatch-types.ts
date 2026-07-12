@@ -53,7 +53,10 @@ export type UpcomingDay = {
 }
 
 export type SchedulePageData = {
-  todayLabel: string
+  selectedDate: string
+  dateLabel: string
+  isPastDate: boolean
+  isToday: boolean
   hub: string
   stats: ScheduleStat[]
   schedule: ScheduleStop[]

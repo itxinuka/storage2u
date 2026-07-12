@@ -1,7 +1,7 @@
 "use client"
 
 import { Plus } from "lucide-react"
-import { useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import { toast } from "sonner"
 
 import { createOrder, type CreateOrderResult } from "@/app/ops/actions"
@@ -24,9 +24,11 @@ type CreateOrderModalProps = {
   open: boolean
   onClose: () => void
   onCreated?: (result: Extract<CreateOrderResult, { success: true }>) => void
+  defaultDate?: string
+  viewDate?: string
 }
 
-const defaultForm = (): {
+const defaultForm = (date = new Date().toLocaleDateString("en-CA")): {
   customerName: string
   type: "pickup" | "delivery"
   campus: string
@@ -43,7 +45,7 @@ const defaultForm = (): {
   address: "",
   boxes: 1,
   items: 0,
-  date: new Date().toLocaleDateString("en-CA"),
+  date,
 })
 
 function ModalField({
@@ -67,9 +69,17 @@ export function CreateOrderModal({
   open,
   onClose,
   onCreated,
+  defaultDate = new Date().toLocaleDateString("en-CA"),
+  viewDate,
 }: CreateOrderModalProps) {
-  const [form, setForm] = useState(defaultForm)
+  const [form, setForm] = useState(defaultForm(defaultDate))
   const [pending, startTransition] = useTransition()
+
+  useEffect(() => {
+    if (open) {
+      setForm(defaultForm(defaultDate))
+    }
+  }, [open, defaultDate])
 
   const estimateLines = useMemo(
     () => formatOpsLineEstimate(form.boxes, form.items),
@@ -81,7 +91,7 @@ export function CreateOrderModal({
   )
 
   function resetAndClose() {
-    setForm(defaultForm())
+    setForm(defaultForm(defaultDate))
     onClose()
   }
 
@@ -105,6 +115,7 @@ export function CreateOrderModal({
         boxes: form.boxes,
         items: form.items,
         date: form.date,
+        viewDate,
       })
 
       if (!result.success) {

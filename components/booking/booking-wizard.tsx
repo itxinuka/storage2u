@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Sparkles,
   Truck,
+  User,
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
@@ -69,6 +70,7 @@ type FormState = {
   university: string
   residence: string
   address: string
+  fullName: string
   phone: string
   scheduledDate: string
   timeWindow: string
@@ -92,6 +94,7 @@ function defaultFormState(): FormState {
     university: siteContent.universities[0]?.name ?? "",
     residence: RESIDENCES[0],
     address: "",
+    fullName: "",
     phone: "",
     scheduledDate: "",
     timeWindow: "Afternoon (12–4 PM)",
@@ -470,6 +473,7 @@ export function BookingWizard({
         university: form.university,
         residence: form.residence,
         address: form.address,
+        fullName: form.fullName,
         phone: form.phone,
         scheduledDate: form.scheduledDate,
         timeWindow: form.timeWindow,
@@ -557,8 +561,19 @@ export function BookingWizard({
   useEffect(() => {
     if (!isSignedIn || !user) return
     const phone = user.primaryPhoneNumber?.phoneNumber
-    if (!phone) return
-    setForm((prev) => (prev.phone.trim() ? prev : { ...prev, phone }))
+    const name =
+      user.fullName ??
+      [user.firstName, user.lastName].filter(Boolean).join(" ")
+    setForm((prev) => {
+      let next = prev
+      if (phone && !prev.phone.trim()) {
+        next = { ...next, phone }
+      }
+      if (name && !prev.fullName.trim()) {
+        next = { ...next, fullName: name }
+      }
+      return next
+    })
   }, [isSignedIn, user])
 
   useEffect(() => {
@@ -587,6 +602,7 @@ export function BookingWizard({
       return (
         form.university.trim().length > 0 &&
         form.address.trim().length > 0 &&
+        form.fullName.trim().length > 0 &&
         form.phone.trim().length > 0
       )
     if (step === 2) {
@@ -842,6 +858,18 @@ export function BookingWizard({
                       />
                     </div>
                     <div>
+                      <FieldLabel>Full name</FieldLabel>
+                      <Input
+                        className={FIELD_CLASS}
+                        value={form.fullName}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, fullName: e.target.value }))
+                        }
+                        placeholder="e.g. Alex Chen"
+                        autoComplete="name"
+                      />
+                    </div>
+                    <div>
                       <FieldLabel>Phone number</FieldLabel>
                       <Input
                         className={FIELD_CLASS}
@@ -851,6 +879,7 @@ export function BookingWizard({
                           setForm((prev) => ({ ...prev, phone: e.target.value }))
                         }
                         placeholder="(416) 555-0148"
+                        autoComplete="tel"
                       />
                     </div>
                   </div>
@@ -954,6 +983,12 @@ export function BookingWizard({
                         label={M.storeLabel}
                         value={`${totals.boxCount} boxes · ${totals.itemCount} items`}
                         sub={selectionSummary}
+                      />
+                      <ReviewRow
+                        icon={User}
+                        label="Contact"
+                        value={form.fullName}
+                        sub={form.phone}
                       />
                       <ReviewRow
                         icon={GraduationCap}

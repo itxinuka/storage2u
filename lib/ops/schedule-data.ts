@@ -58,6 +58,20 @@ export function formatOpsTodayLabel(date = new Date()): string {
   })
 }
 
+export function parseScheduleDate(input?: string | null): string {
+  const today = getOpsToday()
+  if (!input || !/^\d{4}-\d{2}-\d{2}$/.test(input)) return today
+  return input
+}
+
+export function isPastScheduleDate(date: string): boolean {
+  return date < getOpsToday()
+}
+
+export function formatScheduleDateLabel(dateStr: string): string {
+  return formatOpsTodayLabel(new Date(`${dateStr}T12:00:00`))
+}
+
 function shortenUniversity(name: string | null | undefined): string {
   if (!name) return "—"
   return UNIVERSITY_SHORT[name] ?? name
@@ -107,7 +121,7 @@ function deriveDeliveryStatus(
   return assigned ?? "scheduled"
 }
 
-function addDays(dateStr: string, days: number): string {
+export function addDays(dateStr: string, days: number): string {
   const date = new Date(`${dateStr}T12:00:00`)
   date.setDate(date.getDate() + days)
   return date.toLocaleDateString("en-CA")
@@ -121,11 +135,15 @@ function formatUpcomingLabel(dateStr: string): string {
   })
 }
 
-async function ensureShift(supabase: ReturnType<typeof createServiceRoleClient>, today: string, hub: string) {
+async function ensureShift(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+  shiftDate: string,
+  hub: string
+) {
   const { data: existing } = await supabase
     .from("shifts")
     .select("id")
-    .eq("shift_date", today)
+    .eq("shift_date", shiftDate)
     .eq("hub", hub)
     .maybeSingle()
 
@@ -133,7 +151,7 @@ async function ensureShift(supabase: ReturnType<typeof createServiceRoleClient>,
 
   const { data: created, error } = await supabase
     .from("shifts")
-    .insert({ shift_date: today, hub })
+    .insert({ shift_date: shiftDate, hub })
     .select("id")
     .single()
 
@@ -141,13 +159,19 @@ async function ensureShift(supabase: ReturnType<typeof createServiceRoleClient>,
   return created.id
 }
 
-export async function getSchedulePageData(): Promise<SchedulePageData> {
+export async function getSchedulePageData(
+  selectedDate = getOpsToday()
+): Promise<SchedulePageData> {
   const supabase = createServiceRoleClient()
   const today = getOpsToday()
   const hub = getOpsHub()
-  const todayLabel = formatOpsTodayLabel()
+  const dateLabel = formatScheduleDateLabel(selectedDate)
+  const isPastDate = isPastScheduleDate(selectedDate)
+  const isToday = selectedDate === today
 
-  await ensureShift(supabase, today, hub)
+  if (!isPastDate) {
+    await ensureShift(supabase, selectedDate, hub)
+  }
 
   const [
     pickupsResult,
@@ -173,7 +197,7 @@ export async function getSchedulePageData(): Promise<SchedulePageData> {
         booking_items ( kind, qty )
       `
       )
-      .eq("pickup_date", today)
+      .eq("pickup_date", selectedDate)
       .neq("status", "cancelled"),
     supabase
       .from("delivery_requests")
@@ -192,7 +216,7 @@ export async function getSchedulePageData(): Promise<SchedulePageData> {
         )
       `
       )
-      .eq("requested_date", today)
+      .eq("requested_date", selectedDate)
       .neq("status", "cancelled"),
     supabase
       .from("dispatch_assignments")
@@ -227,7 +251,7 @@ export async function getSchedulePageData(): Promise<SchedulePageData> {
         )
       `
       )
-      .eq("shift_date", today)
+      .eq("shift_date", selectedDate)
       .eq("hub", hub),
     supabase
       .from("staff")
@@ -237,14 +261,14 @@ export async function getSchedulePageData(): Promise<SchedulePageData> {
     supabase
       .from("bookings")
       .select("pickup_date, booking_items(kind, qty)")
-      .gte("pickup_date", addDays(today, 1))
-      .lte("pickup_date", addDays(today, 3))
+      .gte("pickup_date", addDays(selectedDate, 1))
+      .lte("pickup_date", addDays(selectedDate, 3))
       .neq("status", "cancelled"),
     supabase
       .from("delivery_requests")
       .select("requested_date, bookings(booking_items(kind, qty))")
-      .gte("requested_date", addDays(today, 1))
-      .lte("requested_date", addDays(today, 3))
+      .gte("requested_date", addDays(selectedDate, 1))
+      .lte("requested_date", addDays(selectedDate, 3))
       .neq("status", "cancelled"),
   ])
 
@@ -364,17 +388,23 @@ export async function getSchedulePageData(): Promise<SchedulePageData> {
   ).length
   const availableVans = drivers.filter((driver) => driver.status === "available").length
 
+  const pickupLabel = isToday ? "Today's pickups" : "Pickups"
+  const deliveryLabel = isToday ? "Today's deliveries" : "Deliveries"
+  const scheduleSub = isToday ? undefined : formatUpcomingLabel(selectedDate)
+
   const stats = [
     {
-      key: "Today's pickups",
+      key: pickupLabel,
       value: String(pickupCount),
-      sub: `${pickupsDone} completed`,
+      sub: scheduleSub ? `${pickupsDone} completed · ${scheduleSub}` : `${pickupsDone} completed`,
       icon: "calendar-check" as const,
     },
     {
-      key: "Today's deliveries",
+      key: deliveryLabel,
       value: String(deliveryCount),
-      sub: `${deliveriesOut} out for delivery`,
+      sub: scheduleSub
+        ? `${deliveriesOut} out for delivery · ${scheduleSub}`
+        : `${deliveriesOut} out for delivery`,
       icon: "truck" as const,
     },
     {
@@ -393,7 +423,7 @@ export async function getSchedulePageData(): Promise<SchedulePageData> {
 
   const upcomingMap = new Map<string, UpcomingDay>()
   for (let offset = 1; offset <= 3; offset += 1) {
-    const date = addDays(today, offset)
+    const date = addDays(selectedDate, offset)
     upcomingMap.set(date, {
       date,
       dateLabel: formatUpcomingLabel(date),
@@ -425,7 +455,10 @@ export async function getSchedulePageData(): Promise<SchedulePageData> {
   const upcoming = [...upcomingMap.values()]
 
   return {
-    todayLabel,
+    selectedDate,
+    dateLabel,
+    isPastDate,
+    isToday,
     hub,
     stats,
     schedule,

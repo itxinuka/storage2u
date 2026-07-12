@@ -1,5 +1,6 @@
 export { AvailabilityView } from "./availability-view"
 export { ConfirmDialog } from "./confirm-dialog"
+export { CreateStaffModal } from "./create-staff-modal"
 export { CreateOrderModal } from "./create-order-modal"
 export { CustomersView } from "./customers-view"
 export { Drawer } from "./drawer"

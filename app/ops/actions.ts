@@ -17,7 +17,7 @@ import {
 } from "@/lib/ops/order-pricing"
 import type { OpsOrder } from "@/lib/ops/orders-types"
 import type { ScheduleStop } from "@/lib/ops/dispatch-types"
-import { getOpsHub, getOpsToday } from "@/lib/ops/schedule-data"
+import { getOpsHub, getOpsToday, isPastScheduleDate } from "@/lib/ops/schedule-data"
 import { parseCampusList } from "@/lib/ops/warehouses-data"
 import { createServiceRoleClient } from "@/lib/supabase/service"
 
@@ -37,15 +37,18 @@ async function requireOpsStaff(): Promise<ActionResult | null> {
   return null
 }
 
-async function getOrCreateTodayShift() {
+async function getOrCreateShift(shiftDate: string) {
+  if (isPastScheduleDate(shiftDate)) {
+    throw new Error("Cannot modify past shifts")
+  }
+
   const supabase = createServiceRoleClient()
-  const today = getOpsToday()
   const hub = getOpsHub()
 
   const { data: existing } = await supabase
     .from("shifts")
     .select("id")
-    .eq("shift_date", today)
+    .eq("shift_date", shiftDate)
     .eq("hub", hub)
     .maybeSingle()
 
@@ -53,7 +56,7 @@ async function getOrCreateTodayShift() {
 
   const { data: created, error } = await supabase
     .from("shifts")
-    .insert({ shift_date: today, hub })
+    .insert({ shift_date: shiftDate, hub })
     .select("id")
     .single()
 
@@ -80,7 +83,10 @@ async function findAvailableVehicle(shiftId: string) {
   return available ?? null
 }
 
-export async function addStaffToShift(staffId: string): Promise<ActionResult> {
+export async function addStaffToShift(
+  staffId: string,
+  shiftDate = getOpsToday()
+): Promise<ActionResult> {
   const authError = await requireOpsStaff()
   if (authError) return { success: false, error: authError.error }
 
@@ -88,8 +94,20 @@ export async function addStaffToShift(staffId: string): Promise<ActionResult> {
     return { success: false, error: "Staff member is required" }
   }
 
+  if (isPastScheduleDate(shiftDate)) {
+    return { success: false, error: "Cannot modify past shifts" }
+  }
+
   const supabase = createServiceRoleClient()
-  const shiftId = await getOrCreateTodayShift()
+  let shiftId: string
+  try {
+    shiftId = await getOrCreateShift(shiftDate)
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Could not create shift",
+    }
+  }
 
   const { data: existingAssignment } = await supabase
     .from("shift_assignments")
@@ -122,18 +140,221 @@ export async function addStaffToShift(staffId: string): Promise<ActionResult> {
   return { success: true }
 }
 
+export type CreateStaffInput = {
+  name: string
+  role?: "driver" | "mover" | "dispatcher"
+  phone?: string
+}
+
+export async function createStaffProfile(
+  input: CreateStaffInput
+): Promise<ActionResult & { id?: string }> {
+  const authError = await requireOpsStaff()
+  if (authError) return { success: false, error: authError.error }
+
+  const name = input.name.trim()
+  if (!name) {
+    return { success: false, error: "Name is required" }
+  }
+
+  const supabase = createServiceRoleClient()
+  const { data: staff, error } = await supabase
+    .from("staff")
+    .insert({
+      name,
+      role: input.role ?? "driver",
+      phone: input.phone?.trim() || null,
+      active: true,
+    })
+    .select("id")
+    .single()
+
+  if (error || !staff) {
+    return { success: false, error: error?.message ?? "Could not create staff profile" }
+  }
+
+  revalidatePath("/ops/schedule")
+  return { success: true, id: staff.id }
+}
+
+export async function removeStaffFromShift(
+  shiftAssignmentId: string,
+  shiftDate = getOpsToday()
+): Promise<ActionResult & { unassignedStops?: number }> {
+  const authError = await requireOpsStaff()
+  if (authError) return { success: false, error: authError.error }
+
+  if (!shiftAssignmentId) {
+    return { success: false, error: "Shift assignment is required" }
+  }
+
+  if (isPastScheduleDate(shiftDate)) {
+    return { success: false, error: "Cannot modify past shifts" }
+  }
+
+  const supabase = createServiceRoleClient()
+
+  const { data: shiftAssignment, error: shiftError } = await supabase
+    .from("shift_assignments")
+    .select("id, shifts(shift_date, hub)")
+    .eq("id", shiftAssignmentId)
+    .maybeSingle()
+
+  if (shiftError || !shiftAssignment) {
+    return { success: false, error: "Shift assignment not found" }
+  }
+
+  const shift = shiftAssignment.shifts as { shift_date: string; hub: string } | null
+  if (
+    !shift ||
+    shift.shift_date !== shiftDate ||
+    shift.hub !== getOpsHub()
+  ) {
+    return { success: false, error: "Driver is not on this day's shift" }
+  }
+
+  const { count } = await supabase
+    .from("dispatch_assignments")
+    .select("id", { count: "exact", head: true })
+    .eq("shift_assignment_id", shiftAssignmentId)
+
+  const { error } = await supabase
+    .from("shift_assignments")
+    .delete()
+    .eq("id", shiftAssignmentId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath("/ops/schedule")
+  return { success: true, unassignedStops: count ?? 0 }
+}
+
+export async function unassignStopFromDriver(
+  stopKey: string,
+  shiftDate = getOpsToday()
+): Promise<ActionResult> {
+  const authError = await requireOpsStaff()
+  if (authError) return { success: false, error: authError.error }
+
+  if (isPastScheduleDate(shiftDate)) {
+    return { success: false, error: "Cannot modify past schedule" }
+  }
+
+  const [kind, id] = stopKey.split(":") as [StopKind, string]
+  if ((kind !== "pickup" && kind !== "delivery") || !id) {
+    return { success: false, error: "Invalid stop" }
+  }
+
+  const supabase = createServiceRoleClient()
+
+  if (kind === "pickup") {
+    const { data: booking } = await supabase
+      .from("bookings")
+      .select("id, pickup_date, status")
+      .eq("id", id)
+      .maybeSingle()
+
+    if (!booking) {
+      return { success: false, error: "Pickup not found" }
+    }
+
+    if (booking.pickup_date !== shiftDate) {
+      return { success: false, error: "Pickup date does not match shift date" }
+    }
+
+    if (booking.status === "picked_up" || booking.status === "in_storage") {
+      return { success: false, error: "Cannot unassign a completed pickup" }
+    }
+
+    const { data: assignment } = await supabase
+      .from("dispatch_assignments")
+      .select("id, dispatch_status")
+      .eq("booking_id", booking.id)
+      .eq("stop_kind", "pickup")
+      .maybeSingle()
+
+    if (!assignment) {
+      return { success: false, error: "Stop is not assigned to a driver" }
+    }
+
+    if (assignment.dispatch_status === "done") {
+      return { success: false, error: "Cannot unassign a completed stop" }
+    }
+
+    const { error } = await supabase
+      .from("dispatch_assignments")
+      .update({ shift_assignment_id: null, dispatch_status: "scheduled" })
+      .eq("id", assignment.id)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+  } else {
+    const { data: delivery } = await supabase
+      .from("delivery_requests")
+      .select("id, requested_date, status")
+      .eq("id", id)
+      .maybeSingle()
+
+    if (!delivery) {
+      return { success: false, error: "Delivery not found" }
+    }
+
+    if (delivery.requested_date !== shiftDate) {
+      return { success: false, error: "Delivery date does not match shift date" }
+    }
+
+    if (delivery.status === "delivered") {
+      return { success: false, error: "Cannot unassign a completed delivery" }
+    }
+
+    const { data: assignment } = await supabase
+      .from("dispatch_assignments")
+      .select("id, dispatch_status")
+      .eq("delivery_request_id", delivery.id)
+      .maybeSingle()
+
+    if (!assignment) {
+      return { success: false, error: "Stop is not assigned to a driver" }
+    }
+
+    if (assignment.dispatch_status === "done") {
+      return { success: false, error: "Cannot unassign a completed stop" }
+    }
+
+    const { error } = await supabase
+      .from("dispatch_assignments")
+      .update({ shift_assignment_id: null, dispatch_status: "scheduled" })
+      .eq("id", assignment.id)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+  }
+
+  revalidatePath("/ops/schedule")
+  return { success: true }
+}
+
 type AssignStopInput = {
   stopKey: string
   shiftAssignmentId: string
+  shiftDate?: string
 }
 
 export async function assignStopToDriver(input: AssignStopInput): Promise<ActionResult> {
   const authError = await requireOpsStaff()
   if (authError) return { success: false, error: authError.error }
 
-  const { stopKey, shiftAssignmentId } = input
+  const { stopKey, shiftAssignmentId, shiftDate = getOpsToday() } = input
   if (!stopKey || !shiftAssignmentId) {
     return { success: false, error: "Stop and driver are required" }
+  }
+
+  if (isPastScheduleDate(shiftDate)) {
+    return { success: false, error: "Cannot modify past schedule" }
   }
 
   const [kind, id] = stopKey.split(":") as [StopKind, string]
@@ -156,10 +377,10 @@ export async function assignStopToDriver(input: AssignStopInput): Promise<Action
   const shift = shiftAssignment.shifts as { shift_date: string; hub: string } | null
   if (
     !shift ||
-    shift.shift_date !== getOpsToday() ||
+    shift.shift_date !== shiftDate ||
     shift.hub !== getOpsHub()
   ) {
-    return { success: false, error: "Driver is not on today's shift" }
+    return { success: false, error: "Driver is not on this day's shift" }
   }
 
   if (kind === "pickup") {
@@ -171,6 +392,10 @@ export async function assignStopToDriver(input: AssignStopInput): Promise<Action
 
     if (bookingError || !booking) {
       return { success: false, error: "Pickup not found" }
+    }
+
+    if (booking.pickup_date !== shiftDate) {
+      return { success: false, error: "Pickup date does not match shift date" }
     }
 
     const { data: existing } = await supabase
@@ -201,12 +426,16 @@ export async function assignStopToDriver(input: AssignStopInput): Promise<Action
   } else {
     const { data: delivery, error: deliveryError } = await supabase
       .from("delivery_requests")
-      .select("id, booking_id")
+      .select("id, booking_id, requested_date")
       .eq("id", id)
       .maybeSingle()
 
     if (deliveryError || !delivery) {
       return { success: false, error: "Delivery not found" }
+    }
+
+    if (delivery.requested_date !== shiftDate) {
+      return { success: false, error: "Delivery date does not match shift date" }
     }
 
     const { data: existing } = await supabase
@@ -359,6 +588,7 @@ export type CreateOrderInput = {
   boxes: number
   items: number
   date: string
+  viewDate?: string
 }
 
 export type CreateOrderResult =
@@ -384,6 +614,11 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   }
   if (!input.date || !input.timeWindow) {
     return { success: false, error: "Date and time window are required" }
+  }
+
+  const viewDate = input.viewDate ?? getOpsToday()
+  if (isPastScheduleDate(viewDate)) {
+    return { success: false, error: "Cannot create orders for past dates" }
   }
 
   const supabase = createServiceRoleClient()
@@ -499,7 +734,6 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
 
     const orderLineItems = buildLineItemsFromCounts(input.boxes, input.items)
     const monthlyTotalCents = total * 100
-    const today = getOpsToday()
 
     const order: OpsOrder = {
       id: booking.id,
@@ -524,7 +758,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     }
 
     const stop: ScheduleStop | null =
-      input.date === today
+      input.date === viewDate
         ? {
             id: input.type === "pickup" ? booking.id : (deliveryRequestId as string),
             stopKey,
@@ -556,9 +790,16 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   }
 }
 
-export async function deleteScheduledStop(stopKey: string): Promise<ActionResult> {
+export async function deleteScheduledStop(
+  stopKey: string,
+  shiftDate = getOpsToday()
+): Promise<ActionResult> {
   const authError = await requireOpsStaff()
   if (authError) return { success: false, error: authError.error }
+
+  if (isPastScheduleDate(shiftDate)) {
+    return { success: false, error: "Cannot modify past schedule" }
+  }
 
   const [kind, id] = stopKey.split(":") as [StopKind, string]
   if ((kind !== "pickup" && kind !== "delivery") || !id) {
@@ -568,6 +809,16 @@ export async function deleteScheduledStop(stopKey: string): Promise<ActionResult
   const supabase = createServiceRoleClient()
 
   if (kind === "pickup") {
+    const { data: booking } = await supabase
+      .from("bookings")
+      .select("pickup_date")
+      .eq("id", id)
+      .maybeSingle()
+
+    if (booking?.pickup_date && isPastScheduleDate(booking.pickup_date)) {
+      return { success: false, error: "Cannot modify past schedule" }
+    }
+
     const { error: dispatchError } = await supabase
       .from("dispatch_assignments")
       .delete()
@@ -587,6 +838,16 @@ export async function deleteScheduledStop(stopKey: string): Promise<ActionResult
       return { success: false, error: bookingError.message }
     }
   } else {
+    const { data: delivery } = await supabase
+      .from("delivery_requests")
+      .select("requested_date")
+      .eq("id", id)
+      .maybeSingle()
+
+    if (delivery?.requested_date && isPastScheduleDate(delivery.requested_date)) {
+      return { success: false, error: "Cannot modify past schedule" }
+    }
+
     const { error } = await supabase.from("delivery_requests").delete().eq("id", id)
 
     if (error) {

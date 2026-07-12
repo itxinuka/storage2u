@@ -34,6 +34,7 @@ export type CreateBookingInput = {
   university: string
   residence: string
   address: string
+  fullName: string
   phone: string
   scheduledDate: string
   timeWindow: string
@@ -139,7 +140,7 @@ export async function createBooking(
     return { success: false, error: "Please sign in to complete your booking.", code: "auth" }
   }
 
-  const { userId, email, fullName } = identity
+  const { userId, email, fullName: clerkFullName } = identity
   const lineItems = selectionToLineItems(input.selection)
   const { total, count } = computeSelectionTotals(input.selection)
   const protectionPlan = Boolean(input.protectionPlan)
@@ -147,6 +148,11 @@ export async function createBooking(
 
   if (count === 0) {
     return { success: false, error: "Add at least one box or item.", code: "validation" }
+  }
+
+  const resolvedName = input.fullName.trim() || clerkFullName
+  if (!resolvedName) {
+    return { success: false, error: "Full name is required.", code: "validation" }
   }
 
   if (!input.university.trim() || !input.address.trim() || !input.phone.trim()) {
@@ -181,7 +187,7 @@ export async function createBooking(
       {
         clerk_user_id: userId,
         email,
-        full_name: fullName,
+        full_name: resolvedName,
         phone: input.phone.trim(),
         university: input.university.trim(),
       },
@@ -301,7 +307,7 @@ export async function createCheckoutSession(
     return { success: false, error: "Please sign in to continue.", code: "auth" }
   }
 
-  const { userId, email, fullName } = identity
+  const { userId, email, fullName: clerkFullName } = identity
 
   const stripe = getStripe()
   if (!stripe) {
@@ -316,7 +322,7 @@ export async function createCheckoutSession(
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, stripe_customer_id, email")
+    .select("id, stripe_customer_id, email, full_name")
     .eq("clerk_user_id", userId)
     .maybeSingle()
 
@@ -372,7 +378,7 @@ export async function createCheckoutSession(
 
   const customerId = await getOrCreateCustomer({
     email: billingEmail,
-    name: fullName,
+    name: profile.full_name?.trim() || clerkFullName,
     clerkUserId: userId,
     existingStripeCustomerId: profile.stripe_customer_id,
   })

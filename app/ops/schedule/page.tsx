@@ -1,13 +1,20 @@
 import { PageHead } from "@/components/ops/page-head"
 import { ScheduleView } from "@/components/ops/schedule-view"
-import { getSchedulePageData } from "@/lib/ops/schedule-data"
+import { getSchedulePageData, parseScheduleDate } from "@/lib/ops/schedule-data"
 
-export default async function OpsSchedulePage() {
+export default async function OpsSchedulePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>
+}) {
+  const { date } = await searchParams
+  const selectedDate = parseScheduleDate(date)
+
   let data
   let loadError: string | null = null
 
   try {
-    data = await getSchedulePageData()
+    data = await getSchedulePageData(selectedDate)
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to load schedule"

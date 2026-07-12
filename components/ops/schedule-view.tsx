@@ -4,6 +4,8 @@ import {
   Box,
   CalendarCheck,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   CircleCheck,
   Plus,
   Trash2,
@@ -15,9 +17,16 @@ import { useEffect, useMemo, useState, useTransition } from "react"
 import { toast } from "sonner"
 
 import type { CreateOrderResult } from "@/app/ops/actions"
-import { addStaffToShift, assignStopToDriver, deleteScheduledStop } from "@/app/ops/actions"
+import {
+  addStaffToShift,
+  assignStopToDriver,
+  deleteScheduledStop,
+  removeStaffFromShift,
+  unassignStopFromDriver,
+} from "@/app/ops/actions"
 import { ConfirmDialog } from "@/components/ops/confirm-dialog"
 import { CreateOrderModal } from "@/components/ops/create-order-modal"
+import { CreateStaffModal } from "@/components/ops/create-staff-modal"
 import { FilterTabs, Modal, PageHead } from "@/components/ops"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -29,6 +38,7 @@ import type {
   ShiftDriver,
   StaffRosterMember,
 } from "@/lib/ops/dispatch-types"
+import { addDays, getOpsToday } from "@/lib/ops/schedule-data"
 import { cn } from "@/lib/utils"
 
 const statIcons = {
@@ -137,10 +147,68 @@ function DriverAvatar({ name }: { name: string }) {
   )
 }
 
+function DriverBadge({
+  stop,
+  canMutate,
+  pending,
+  onAssign,
+}: {
+  stop: ScheduleStop
+  canMutate: boolean
+  pending: boolean
+  onAssign: (stop: ScheduleStop) => void
+}) {
+  const canReassign = canMutate && stop.status !== "done"
+
+  if (!stop.driver) {
+    if (!canMutate) {
+      return <span className="text-[12.5px] text-muted-foreground">Unassigned</span>
+    }
+    return (
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => onAssign(stop)}
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border-0 bg-purple-50 px-3 py-1.5 text-[12.5px] font-bold text-primary"
+      >
+        <Plus className="size-3.5" />
+        Assign
+      </button>
+    )
+  }
+
+  if (!canReassign) {
+    return (
+      <Badge
+        variant="outline"
+        className="rounded-full border-transparent bg-muted font-bold text-muted-foreground"
+      >
+        <Truck className="size-3" />
+        {stop.driver}
+      </Badge>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={pending}
+      onClick={() => onAssign(stop)}
+      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border-0 bg-muted px-3 py-1.5 text-[12.5px] font-bold text-muted-foreground transition-colors hover:bg-purple-50 hover:text-primary"
+    >
+      <Truck className="size-3.5" />
+      {stop.driver}
+    </button>
+  )
+}
+
 type ScheduleViewProps = SchedulePageData
 
 export function ScheduleView({
-  todayLabel,
+  selectedDate,
+  dateLabel,
+  isPastDate,
+  isToday,
   hub,
   stats,
   schedule,
@@ -153,11 +221,23 @@ export function ScheduleView({
   const [assignStop, setAssignStop] = useState<ScheduleStop | null>(null)
   const [addShiftOpen, setAddShiftOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
+  const [createStaffOpen, setCreateStaffOpen] = useState(false)
   const [deleteStop, setDeleteStop] = useState<ScheduleStop | null>(null)
+  const [removeDriver, setRemoveDriver] = useState<ShiftDriver | null>(null)
   const [optimisticSchedule, setOptimisticSchedule] = useState<ScheduleStop[] | null>(
     null
   )
   const [pending, startTransition] = useTransition()
+
+  const canMutate = !isPastDate
+  const scheduleTitle = isToday
+    ? "Today's schedule"
+    : isPastDate
+      ? `Schedule for ${dateLabel} (past)`
+      : `Schedule for ${dateLabel}`
+  const emptyStateMessage = isToday
+    ? "No stops scheduled for today."
+    : "No stops scheduled for this date."
 
   useEffect(() => {
     setOptimisticSchedule(null)
@@ -175,6 +255,10 @@ export function ScheduleView({
 
   const assignableDrivers = drivers.filter((driver) => driver.van !== "—")
 
+  function navigateToDate(date: string) {
+    router.push(`/ops/schedule?date=${date}`)
+  }
+
   function refresh() {
     router.refresh()
   }
@@ -185,6 +269,7 @@ export function ScheduleView({
       const result = await assignStopToDriver({
         stopKey: assignStop.stopKey,
         shiftAssignmentId,
+        shiftDate: selectedDate,
       })
       if (!result.success) {
         toast.error(result.error ?? "Could not assign driver")
@@ -198,7 +283,7 @@ export function ScheduleView({
 
   function handleAddToShift(staff: StaffRosterMember) {
     startTransition(async () => {
-      const result = await addStaffToShift(staff.id)
+      const result = await addStaffToShift(staff.id, selectedDate)
       if (!result.success) {
         toast.error(result.error ?? "Could not add to shift")
         return
@@ -221,6 +306,40 @@ export function ScheduleView({
     refresh()
   }
 
+  function handleUnassign() {
+    if (!assignStop) return
+    const stopKey = assignStop.stopKey
+    startTransition(async () => {
+      const result = await unassignStopFromDriver(stopKey, selectedDate)
+      if (!result.success) {
+        toast.error(result.error ?? "Could not unassign driver")
+        return
+      }
+      toast.success("Driver unassigned")
+      setAssignStop(null)
+      refresh()
+    })
+  }
+
+  function handleRemoveFromShift() {
+    if (!removeDriver) return
+    const driver = removeDriver
+    setRemoveDriver(null)
+    startTransition(async () => {
+      const result = await removeStaffFromShift(driver.id, selectedDate)
+      if (!result.success) {
+        toast.error(result.error ?? "Could not remove from shift")
+        return
+      }
+      const suffix =
+        result.unassignedStops && result.unassignedStops > 0
+          ? ` · ${result.unassignedStops} stop${result.unassignedStops === 1 ? "" : "s"} unassigned`
+          : ""
+      toast.success(`${driver.name === "—" ? driver.van : driver.name} removed from shift${suffix}`)
+      refresh()
+    })
+  }
+
   function handleDeleteStop() {
     if (!deleteStop) return
     const stopKey = deleteStop.stopKey
@@ -230,7 +349,7 @@ export function ScheduleView({
     setDeleteStop(null)
 
     startTransition(async () => {
-      const result = await deleteScheduledStop(stopKey)
+      const result = await deleteScheduledStop(stopKey, selectedDate)
       if (!result.success) {
         toast.error(result.error ?? "Could not remove stop")
         setOptimisticSchedule(null)
@@ -244,12 +363,47 @@ export function ScheduleView({
 
   return (
     <div>
-      <PageHead title="Operations" sub={`${todayLabel} · ${hub}`}>
-        <Button variant="outline" onClick={() => setCreateOpen(true)}>
-          <Plus className="size-4" />
-          New order
-        </Button>
+      <PageHead title="Operations" sub={`${dateLabel} · ${hub}`}>
+        {canMutate ? (
+          <Button variant="outline" onClick={() => setCreateOpen(true)}>
+            <Plus className="size-4" />
+            New order
+          </Button>
+        ) : null}
       </PageHead>
+
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Previous day"
+          onClick={() => navigateToDate(addDays(selectedDate, -1))}
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(event) => navigateToDate(event.target.value)}
+          className="h-9 rounded-full border border-border bg-card px-3 text-sm font-medium text-foreground"
+        />
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Next day"
+          onClick={() => navigateToDate(addDays(selectedDate, 1))}
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+        {!isToday ? (
+          <Button variant="outline" size="sm" onClick={() => navigateToDate(getOpsToday())}>
+            Today
+          </Button>
+        ) : null}
+        {isPastDate ? (
+          <span className="text-sm text-muted-foreground">View only — past date</span>
+        ) : null}
+      </div>
 
       <div className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
@@ -260,7 +414,7 @@ export function ScheduleView({
       <section className="mb-11">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-            Today&apos;s schedule
+            {scheduleTitle}
           </h2>
           <FilterTabs
             value={filter}
@@ -287,7 +441,7 @@ export function ScheduleView({
 
           {rows.length === 0 ? (
             <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-              No stops scheduled for today.
+              {emptyStateMessage}
             </div>
           ) : (
             rows.map((stop) => (
@@ -324,38 +478,27 @@ export function ScheduleView({
                 </span>
 
                 <span className="hidden md:inline">
-                  {!stop.driver ? (
-                    <button
-                      type="button"
-                      disabled={pending}
-                      onClick={() => setAssignStop(stop)}
-                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border-0 bg-purple-50 px-3 py-1.5 text-[12.5px] font-bold text-primary"
-                    >
-                      <Plus className="size-3.5" />
-                      Assign
-                    </button>
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className="rounded-full border-transparent bg-muted font-bold text-muted-foreground"
-                    >
-                      <Truck className="size-3" />
-                      {stop.driver}
-                    </Badge>
-                  )}
+                  <DriverBadge
+                    stop={stop}
+                    canMutate={canMutate}
+                    pending={pending}
+                    onAssign={setAssignStop}
+                  />
                 </span>
 
                 <div className="flex items-center justify-end gap-2 md:col-auto">
                   <DispatchStatusBadge status={stop.status} />
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => setDeleteStop(stop)}
-                    aria-label="Remove scheduled stop"
-                    className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full border-0 bg-[var(--danger-bg)] text-[var(--danger-fg)] transition-colors hover:brightness-95 disabled:opacity-50"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
+                  {canMutate ? (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => setDeleteStop(stop)}
+                      aria-label="Remove scheduled stop"
+                      className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full border-0 bg-[var(--danger-bg)] text-[var(--danger-fg)] transition-colors hover:brightness-95 disabled:opacity-50"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  ) : null}
                 </div>
 
                 <div className="col-span-2 flex flex-wrap items-center gap-2 md:hidden">
@@ -363,25 +506,12 @@ export function ScheduleView({
                   <span className="text-[13px] font-semibold">
                     {stop.boxes} boxes
                   </span>
-                  {!stop.driver ? (
-                    <button
-                      type="button"
-                      disabled={pending}
-                      onClick={() => setAssignStop(stop)}
-                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border-0 bg-purple-50 px-3 py-1.5 text-[12.5px] font-bold text-primary"
-                    >
-                      <Plus className="size-3.5" />
-                      Assign
-                    </button>
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className="rounded-full border-transparent bg-muted font-bold text-muted-foreground"
-                    >
-                      <Truck className="size-3" />
-                      {stop.driver}
-                    </Badge>
-                  )}
+                  <DriverBadge
+                    stop={stop}
+                    canMutate={canMutate}
+                    pending={pending}
+                    onAssign={setAssignStop}
+                  />
                 </div>
               </div>
             ))
@@ -395,15 +525,27 @@ export function ScheduleView({
             <h2 className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
               Drivers on shift ({drivers.length})
             </h2>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={pending || staffRoster.length === 0}
-              onClick={() => setAddShiftOpen(true)}
-            >
-              <Plus className="size-3.5" />
-              Add to shift
-            </Button>
+            {canMutate ? (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCreateStaffOpen(true)}
+                >
+                  <Plus className="size-3.5" />
+                  Add driver
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pending || staffRoster.length === 0}
+                  onClick={() => setAddShiftOpen(true)}
+                >
+                  <Plus className="size-3.5" />
+                  Add to shift
+                </Button>
+              </div>
+            ) : null}
           </div>
 
           <div className="flex flex-col gap-3">
@@ -444,6 +586,17 @@ export function ScheduleView({
                           </div>
                         ) : null}
                       </div>
+                      {canMutate ? (
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() => setRemoveDriver(driver)}
+                          aria-label="Remove from shift"
+                          className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-[var(--danger-bg)] text-[var(--danger-fg)] transition-colors hover:brightness-95 disabled:opacity-50"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      ) : null}
                     </CardContent>
                   </Card>
                 )
@@ -458,11 +611,14 @@ export function ScheduleView({
           </h2>
           <Card className="overflow-hidden py-0">
             {upcoming.map((day, index) => (
-              <div
+              <button
                 key={day.date}
+                type="button"
+                onClick={() => navigateToDate(day.date)}
                 className={cn(
-                  "flex items-center gap-3.5 px-5 py-4",
-                  index > 0 && "border-t border-border"
+                  "flex w-full cursor-pointer items-center gap-3.5 px-5 py-4 text-left transition-colors hover:bg-muted/50",
+                  index > 0 && "border-t border-border",
+                  day.date === selectedDate && "bg-purple-soft/40"
                 )}
               >
                 <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-purple-soft text-primary">
@@ -479,7 +635,7 @@ export function ScheduleView({
                 <span className="text-[13px] font-bold text-primary">
                   {day.boxes} boxes
                 </span>
-              </div>
+              </button>
             ))}
           </Card>
 
@@ -501,7 +657,7 @@ export function ScheduleView({
       <Modal
         open={!!assignStop}
         onClose={() => setAssignStop(null)}
-        title="Assign driver"
+        title={assignStop?.driver ? "Reassign driver" : "Assign driver"}
         subtitle={
           assignStop
             ? `#${assignStop.orderId} · ${assignStop.customer} · ${assignStop.time}`
@@ -509,34 +665,57 @@ export function ScheduleView({
         }
       >
         <div className="flex flex-col gap-2.5">
+          {assignStop?.driver ? (
+            <Button
+              variant="outline"
+              disabled={pending}
+              onClick={handleUnassign}
+              className="w-full"
+            >
+              Unassign driver
+            </Button>
+          ) : null}
           {assignableDrivers.length === 0 ? (
             <p className="py-2 text-center text-sm text-muted-foreground">
-              Add a driver to today&apos;s shift first.
+              {isToday
+                ? "Add a driver to today's shift first."
+                : "Add a driver to this day's shift first."}
             </p>
           ) : (
-            assignableDrivers.map((driver) => (
-              <button
-                key={driver.id}
-                type="button"
-                disabled={pending}
-                onClick={() => handleAssign(driver.id)}
-                className="flex cursor-pointer items-center gap-3 rounded-2xl border-0 bg-card p-3.5 text-left shadow-brand"
-              >
-                <DriverAvatar name={driver.name === "—" ? driver.van : driver.name} />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-bold text-foreground">
-                    {driver.van}
+            assignableDrivers.map((driver) => {
+              const isCurrent = driver.id === assignStop?.driverAssignmentId
+              return (
+                <button
+                  key={driver.id}
+                  type="button"
+                  disabled={pending || isCurrent}
+                  onClick={() => handleAssign(driver.id)}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-3 rounded-2xl border-0 bg-card p-3.5 text-left shadow-brand",
+                    isCurrent && "ring-2 ring-primary/30"
+                  )}
+                >
+                  <DriverAvatar name={driver.name === "—" ? driver.van : driver.name} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-bold text-foreground">
+                      {driver.van}
+                      {isCurrent ? (
+                        <span className="ml-2 text-[11px] font-bold text-primary">
+                          Current
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="text-[12.5px] text-muted-foreground">
+                      {driver.name === "—" ? "Unassigned" : driver.name}
+                      {driver.stops
+                        ? ` · ${driver.stops - driver.done} stops left`
+                        : " · available"}
+                    </div>
                   </div>
-                  <div className="text-[12.5px] text-muted-foreground">
-                    {driver.name === "—" ? "Unassigned" : driver.name}
-                    {driver.stops
-                      ? ` · ${driver.stops - driver.done} stops left`
-                      : " · available"}
-                  </div>
-                </div>
-                <DriverStatusBadge status={driver.status} />
-              </button>
-            ))
+                  <DriverStatusBadge status={driver.status} />
+                </button>
+              )
+            })
           )}
         </div>
       </Modal>
@@ -544,7 +723,7 @@ export function ScheduleView({
       <Modal
         open={addShiftOpen}
         onClose={() => setAddShiftOpen(false)}
-        title="Add to today's shift"
+        title={isToday ? "Add to today's shift" : "Add to shift"}
         subtitle="Put a driver or mover on shift and give them a van."
       >
         <div className="flex flex-col gap-2.5">
@@ -582,10 +761,18 @@ export function ScheduleView({
         </div>
       </Modal>
 
+      <CreateStaffModal
+        open={createStaffOpen}
+        onClose={() => setCreateStaffOpen(false)}
+        onCreated={refresh}
+      />
+
       <CreateOrderModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={handleOrderCreated}
+        defaultDate={selectedDate}
+        viewDate={selectedDate}
       />
 
       <ConfirmDialog
@@ -602,6 +789,33 @@ export function ScheduleView({
           ) : null
         }
         confirmLabel="Remove stop"
+        pending={pending}
+      />
+
+      <ConfirmDialog
+        open={!!removeDriver}
+        onClose={() => setRemoveDriver(null)}
+        onConfirm={handleRemoveFromShift}
+        title="Remove from shift?"
+        description={
+          removeDriver ? (
+            <>
+              Remove{" "}
+              <strong>
+                {removeDriver.name === "—" ? removeDriver.van : removeDriver.name}
+              </strong>{" "}
+              ({removeDriver.van}) from this shift?
+              {removeDriver.stops > 0 ? (
+                <>
+                  {" "}
+                  {removeDriver.stops} assigned stop
+                  {removeDriver.stops === 1 ? "" : "s"} will become unassigned.
+                </>
+              ) : null}
+            </>
+          ) : null
+        }
+        confirmLabel="Remove from shift"
         pending={pending}
       />
     </div>

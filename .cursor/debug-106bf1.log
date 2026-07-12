@@ -45,3 +45,13 @@
 {"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868468337}
 {"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868470764}
 {"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783868470822}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783875437200}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"entry","data":{"mode":"delivery"},"hypothesisId":"A","timestamp":1783875928140}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"success","data":{"bookingId":"2efac340-5206-469f-ada0-d263f840b1b1"},"hypothesisId":"A","timestamp":1783875929345}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"entry","data":{"bookingId":"2efac340-5206-469f-ada0-d263f840b1b1"},"hypothesisId":"B","timestamp":1783875929431}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"resolved origin","data":{"origin":"http://localhost:3000","lineItemCount":2},"hypothesisId":"E","timestamp":1783875930575}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"entry","data":{"mode":"delivery"},"hypothesisId":"A","timestamp":1783875952627}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"success","data":{"bookingId":"05d426d2-cde1-4fc2-8484-865f5e8c5ca9"},"hypothesisId":"A","timestamp":1783875953716}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"entry","data":{"bookingId":"05d426d2-cde1-4fc2-8484-865f5e8c5ca9"},"hypothesisId":"B","timestamp":1783875953788}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"resolved origin","data":{"origin":"http://localhost:3000","lineItemCount":2},"hypothesisId":"E","timestamp":1783875954473}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783877003347}
