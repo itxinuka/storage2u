@@ -5,6 +5,7 @@ import { SectionHeader } from "@/components/section-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { protectionCopy } from "@/lib/protection-plan"
 import { siteContent } from "@/lib/site-content"
 import { cn } from "@/lib/utils"
 
@@ -112,7 +113,7 @@ export function Pricing() {
         </div>
 
         <p className="mt-10 text-center text-sm text-muted-foreground">
-          Every box covered up to $500. Questions?{" "}
+          {protectionCopy.pricingFootnote} Questions?{" "}
           <Link href="/contact" className="font-semibold text-primary underline underline-offset-4">
             Contact us
           </Link>

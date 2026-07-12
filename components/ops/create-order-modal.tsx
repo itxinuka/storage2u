@@ -38,7 +38,7 @@ const defaultForm = (): {
 } => ({
   customerName: "",
   type: "pickup" as "pickup" | "delivery",
-  campus: siteContent.universities[0]?.[0] ?? "",
+  campus: siteContent.universities[0]?.name ?? "",
   timeWindow: `${TIME_WINDOWS[0].label} (${TIME_WINDOWS[0].hours})`,
   address: "",
   boxes: 1,
@@ -178,9 +178,9 @@ export function CreateOrderModal({
               setForm((prev) => ({ ...prev, campus: e.target.value }))
             }
           >
-            {siteContent.universities.map(([name]) => (
+            {siteContent.universities.map(({ name, short }) => (
               <option key={name} value={name}>
-                {name}
+                {short}
               </option>
             ))}
           </select>

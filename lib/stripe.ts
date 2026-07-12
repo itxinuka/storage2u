@@ -2,6 +2,7 @@ import "server-only"
 
 import Stripe from "stripe"
 
+import { STRIPE_CHECKOUT_BRANDING } from "@/lib/stripe-branding"
 import type { StripeLineItem } from "@/lib/stripe-prices"
 
 let cached: Stripe | null = null
@@ -160,6 +161,20 @@ export async function createSubscriptionCheckout(
       client_reference_id: input.bookingId,
       metadata: {
         booking_id: input.bookingId,
+      },
+      branding_settings: {
+        display_name: STRIPE_CHECKOUT_BRANDING.displayName,
+        background_color: STRIPE_CHECKOUT_BRANDING.backgroundColor,
+        button_color: STRIPE_CHECKOUT_BRANDING.buttonColor,
+        border_style: STRIPE_CHECKOUT_BRANDING.borderStyle,
+        logo: {
+          type: "file",
+          file: STRIPE_CHECKOUT_BRANDING.logoFileId,
+        },
+        icon: {
+          type: "file",
+          file: STRIPE_CHECKOUT_BRANDING.iconFileId,
+        },
       },
     })
 

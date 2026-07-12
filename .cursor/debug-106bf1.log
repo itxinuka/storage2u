@@ -2,3 +2,32 @@
 {"sessionId":"106bf1","location":"actions.ts:createBooking","message":"success","data":{"bookingId":"4280a922-4e1c-4061-b46f-802d5a1a699c"},"hypothesisId":"A","timestamp":1783475173949}
 {"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"entry","data":{"bookingId":"4280a922-4e1c-4061-b46f-802d5a1a699c"},"hypothesisId":"B","timestamp":1783475174048}
 {"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"resolved origin","data":{"origin":"http://localhost:3000","lineItemCount":1},"hypothesisId":"E","timestamp":1783475175606}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"entry","data":{"mode":"pickup"},"hypothesisId":"A","timestamp":1783609593216}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"success","data":{"bookingId":"39623158-defa-463b-8ee4-e05bd094aa4b"},"hypothesisId":"A","timestamp":1783609595027}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"entry","data":{"bookingId":"39623158-defa-463b-8ee4-e05bd094aa4b"},"hypothesisId":"B","timestamp":1783609595165}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"resolved origin","data":{"origin":"http://localhost:3000","lineItemCount":1},"hypothesisId":"E","timestamp":1783609596449}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"entry","data":{"mode":"pickup"},"hypothesisId":"A","timestamp":1783616740968}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"success","data":{"bookingId":"d96a898c-8b47-4b18-9210-2ef3934c212a"},"hypothesisId":"A","timestamp":1783616743380}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"entry","data":{"bookingId":"d96a898c-8b47-4b18-9210-2ef3934c212a"},"hypothesisId":"B","timestamp":1783616743517}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"resolved origin","data":{"origin":"http://localhost:3000","lineItemCount":1},"hypothesisId":"E","timestamp":1783616745184}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"entry","data":{"mode":"pickup"},"hypothesisId":"A","timestamp":1783616809617}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"success","data":{"bookingId":"d3706267-007a-404d-b7d0-fb8f1a14dc86"},"hypothesisId":"A","timestamp":1783616811339}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"entry","data":{"bookingId":"d3706267-007a-404d-b7d0-fb8f1a14dc86"},"hypothesisId":"B","timestamp":1783616811546}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"resolved origin","data":{"origin":"http://localhost:3000","lineItemCount":2},"hypothesisId":"E","timestamp":1783616812357}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783863430828}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783863435605}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783863437241}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783863449994}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"entry","data":{"mode":"pickup"},"hypothesisId":"A","timestamp":1783867182072}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"success","data":{"bookingId":"d90e4594-adf3-4b38-aee0-932f815d4f94"},"hypothesisId":"A","timestamp":1783867185172}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"entry","data":{"bookingId":"d90e4594-adf3-4b38-aee0-932f815d4f94"},"hypothesisId":"B","timestamp":1783867185561}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"resolved origin","data":{"origin":"http://localhost:3000","lineItemCount":2},"hypothesisId":"E","timestamp":1783867188496}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"entry","data":{"mode":"pickup"},"hypothesisId":"A","timestamp":1783867604190}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"success","data":{"bookingId":"0183b53c-147f-42dd-a4c5-7a1962b5ec11"},"hypothesisId":"A","timestamp":1783867606076}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"entry","data":{"bookingId":"0183b53c-147f-42dd-a4c5-7a1962b5ec11"},"hypothesisId":"B","timestamp":1783867606336}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"resolved origin","data":{"origin":"http://localhost:3000","lineItemCount":2},"hypothesisId":"E","timestamp":1783867607269}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"entry","data":{"mode":"pickup"},"hypothesisId":"A","timestamp":1783867659506}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"success","data":{"bookingId":"5e1afb7a-925f-43dd-a390-612f35bd1880"},"hypothesisId":"A","timestamp":1783867661067}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"entry","data":{"bookingId":"5e1afb7a-925f-43dd-a390-612f35bd1880"},"hypothesisId":"B","timestamp":1783867661210}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"resolved origin","data":{"origin":"http://localhost:3000","lineItemCount":2},"hypothesisId":"E","timestamp":1783867662441}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783867946446}

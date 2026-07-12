@@ -2,8 +2,9 @@ import Link from "next/link"
 import { ArrowRight, CircleCheck } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { protectionCopy } from "@/lib/protection-plan"
 
-const perks = ["Free pickup & delivery", "Insured up to $500", "Cancel anytime"]
+const perks = ["Free pickup & delivery", protectionCopy.ctaPerk, "Cancel anytime"]
 
 export function CtaBand() {
   return (

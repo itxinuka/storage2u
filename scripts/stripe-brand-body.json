@@ -1,0 +1,13 @@
+{
+  "primary_color": "rgb(107, 56, 212)",
+  "contrast_color": "rgb(104, 52, 211)",
+  "font_color": "rgb(255, 255, 255)",
+  "checkout_background_color": "rgb(252, 248, 255)",
+  "checkout_button_color": "rgb(107, 56, 212)",
+  "secondary_color": "rgb(191, 243, 101)",
+  "checkout_use_brand_colors": false,
+  "use_logo_instead_of_icon": true,
+  "icon": "file_1TrJiVRt5Yna6OxDqweeXHWy",
+  "logo": "file_1TrJiWRt5Yna6OxDxoQhPPvG",
+  "checkout_border_style": "round"
+}

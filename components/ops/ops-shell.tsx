@@ -7,6 +7,7 @@ import { useClerk, useUser } from "@clerk/nextjs"
 import {
   Archive,
   CalendarDays,
+  CalendarOff,
   Inbox,
   LogOut,
   MapPin,
@@ -26,6 +27,7 @@ import { cn } from "@/lib/utils"
 
 const navIcons: Record<string, LucideIcon> = {
   "calendar-days": CalendarDays,
+  "calendar-off": CalendarOff,
   inbox: Inbox,
   users: Users,
   archive: Archive,

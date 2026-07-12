@@ -1,11 +1,13 @@
 /** Shared marketing + dashboard copy (ported from prototype app/data.js). */
 
+import { protectionCopy } from "@/lib/protection-plan"
+
 export const siteContent = {
   brand: {
     proofStars: 4.9,
     stats: [
       ["5,000+", "students served"],
-      ["20+", "Canadian campuses"],
+      ["4", "Atlantic campuses"],
       ["$0", "hidden fees"],
     ] as const,
   },
@@ -76,48 +78,75 @@ export const siteContent = {
 
   why: [
     { icon: "truck" as const, title: "Free campus pickup & delivery", body: "We come to you. No moving truck, no bribing a friend with a car." },
-    { icon: "shield-check" as const, title: "Climate-controlled & insured", body: "Clean, monitored, secure storage — every box covered up to $500." },
+    { icon: "shield-check" as const, title: protectionCopy.whyTitle, body: protectionCopy.whyBody },
     { icon: "dollar-sign" as const, title: "Pay per box, monthly", body: "Only pay for what you actually store. No oversized locker you half-fill." },
     { icon: "circle-check" as const, title: "Cancel anytime", body: "Month-to-month, no lock-in. Get your stuff back whenever you need it." },
   ],
 
   universities: [
-    ["University of British Columbia", "Vancouver, BC"],
-    ["University of Toronto", "Toronto, ON"],
-    ["McGill University", "Montréal, QC"],
-    ["University of Waterloo", "Waterloo, ON"],
-    ["Queen's University", "Kingston, ON"],
-    ["Simon Fraser University", "Burnaby, BC"],
-    ["Western University", "London, ON"],
-    ["McMaster University", "Hamilton, ON"],
-    ["University of Alberta", "Edmonton, AB"],
-    ["York University", "Toronto, ON"],
-    ["Concordia University", "Montréal, QC"],
-    ["Dalhousie University", "Halifax, NS"],
-    ["Memorial University", "St. John's, NL"],
+    {
+      name: "Memorial University",
+      short: "Memorial",
+      location: "St. John's, NL",
+      logo: "/marketing/logos/memorial.png",
+    },
+    {
+      name: "St. Francis Xavier University",
+      short: "StFX",
+      location: "Antigonish, NS",
+      logo: "/marketing/logos/stfx.png",
+    },
+    {
+      name: "Dalhousie University",
+      short: "Dalhousie",
+      location: "Halifax, NS",
+      logo: "/marketing/logos/dalhousie.png",
+    },
+    {
+      name: "College of the North Atlantic",
+      short: "CNA",
+      location: "Newfoundland & Labrador",
+      logo: "/marketing/logos/cna.png",
+    },
   ] as const,
 
   logoStrip: [
-    ["ubc", "University of British Columbia", "UBC"],
-    ["uoft", "University of Toronto", "U of T"],
-    ["mcgill", "McGill University", "McGill"],
-    ["waterloo", "University of Waterloo", "Waterloo"],
-    ["queens", "Queen's University", "Queen's"],
-    ["sfu", "Simon Fraser University", "SFU"],
-    ["dal", "Dalhousie University", "Dalhousie"],
-    ["memorial", "Memorial University", "Memorial"],
+    {
+      id: "memorial",
+      name: "Memorial University",
+      short: "Memorial",
+      logo: "/marketing/logos/memorial.png",
+    },
+    {
+      id: "stfx",
+      name: "St. Francis Xavier University",
+      short: "StFX",
+      logo: "/marketing/logos/stfx.png",
+    },
+    {
+      id: "dal",
+      name: "Dalhousie University",
+      short: "Dalhousie",
+      logo: "/marketing/logos/dalhousie.png",
+    },
+    {
+      id: "cna",
+      name: "College of the North Atlantic",
+      short: "CNA",
+      logo: "/marketing/logos/cna.png",
+    },
   ] as const,
 
   testimonials: [
-    { quote: "Honestly the easiest part of moving out — they showed up, grabbed my boxes, and that was it.", name: "Priya S.", meta: "2nd year · UBC" },
-    { quote: "I had six boxes, so I paid for six boxes. No giant locker I'd just half-fill all summer.", name: "Jordan T.", meta: "4th year · U of T" },
-    { quote: "Everything came back the morning I moved in. Zero stress during exam season — exactly what I needed.", name: "Émile R.", meta: "3rd year · McGill" },
+    { quote: "Honestly the easiest part of moving out — they showed up, grabbed my boxes, and that was it.", name: "Priya S.", meta: "2nd year · Memorial" },
+    { quote: "I had six boxes, so I paid for six boxes. No giant locker I'd just half-fill all summer.", name: "Jordan T.", meta: "4th year · Dalhousie" },
+    { quote: "Everything came back the morning I moved in. Zero stress during exam season — exactly what I needed.", name: "Émile R.", meta: "3rd year · StFX" },
   ],
 
   faqs: [
     ["How does per-box pricing work?", "You pay a flat monthly fee for each box you store — $7, $9, or $13 depending on size. No deposits, no setup fees, and pickup and delivery on campus are always free."],
     ["When can I get my stuff back?", "Anytime. Request a delivery from your dashboard and pick a window — we'll have it back at your door, usually within 48 hours."],
-    ["Is my stuff insured?", "Yes. Every box is stored in a climate-controlled, monitored facility and covered up to $500. Need more coverage? Just ask."],
+    [protectionCopy.faqQuestion, protectionCopy.faqAnswer],
     ["What if I'm not sure how many boxes I need?", "Start with your best guess — you can add or remove boxes anytime, and we'll only ever bill you for what you're actually storing."],
   ] as const,
 
@@ -127,7 +156,7 @@ export const siteContent = {
     ["Contract", { us: "Month-to-month, cancel anytime", them: "Often locked into 6–12 months" }],
     ["Climate control", { us: true, them: "Extra fee, if offered" }],
     ["Inventory photos", { us: "Every box catalogued", them: false }],
-    ["Insurance", { us: "Up to $500 included", them: "Sold separately" }],
+    ["Protection", { us: protectionCopy.compareUs, them: protectionCopy.compareThem }],
     ["Effort on you", { us: "Pack boxes — that's it", them: "Drive, lift, load, repeat" }],
   ] as const,
 
@@ -155,7 +184,7 @@ export const siteContent = {
   contactChannels: [
     { icon: "inbox" as const, label: "Email us", value: "hello@storage2u.ca", note: "We reply within a few hours" },
     { icon: "clock" as const, label: "Support hours", value: "Mon–Sat, 8 AM – 8 PM ET", note: "Extended during move-out season" },
-    { icon: "map-pin" as const, label: "Head office", value: "Toronto, Ontario", note: "Serving 20+ campuses nationwide" },
+    { icon: "map-pin" as const, label: "Head office", value: "St. John's, NL", note: "Serving Memorial, StFX, Dalhousie & CNA" },
   ],
 
   dashboard: {

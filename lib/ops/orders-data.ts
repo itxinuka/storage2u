@@ -55,19 +55,10 @@ type DispatchRow = {
 }
 
 const UNIVERSITY_SHORT: Record<string, string> = {
-  "University of British Columbia": "UBC",
-  "Simon Fraser University": "SFU",
-  "University of Toronto": "U of T",
-  "McGill University": "McGill",
-  "University of Waterloo": "Waterloo",
-  "Queen's University": "Queen's",
-  "Western University": "Western",
-  "McMaster University": "McMaster",
-  "University of Alberta": "U of A",
-  "York University": "York",
-  "Concordia University": "Concordia",
-  "Dalhousie University": "Dalhousie",
   "Memorial University": "Memorial",
+  "St. Francis Xavier University": "StFX",
+  "Dalhousie University": "Dalhousie",
+  "College of the North Atlantic": "CNA",
 }
 
 function shortenUniversity(name: string | null | undefined): string {

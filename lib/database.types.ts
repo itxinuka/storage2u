@@ -50,6 +50,33 @@ export type Database = {
           },
         ]
       }
+      booking_blocks: {
+        Row: {
+          block_date: string
+          created_at: string
+          created_by: string | null
+          id: string
+          reason: string | null
+          time_window_id: string | null
+        }
+        Insert: {
+          block_date: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          time_window_id?: string | null
+        }
+        Update: {
+          block_date?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          time_window_id?: string | null
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           contact_phone: string | null
@@ -62,6 +89,7 @@ export type Database = {
           pickup_address: string
           pickup_date: string | null
           profile_id: string
+          protection_plan: boolean
           residence: string | null
           status: Database["public"]["Enums"]["booking_status"]
           stripe_payment_id: string | null
@@ -80,6 +108,7 @@ export type Database = {
           pickup_address: string
           pickup_date?: string | null
           profile_id: string
+          protection_plan?: boolean
           residence?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           stripe_payment_id?: string | null
@@ -98,6 +127,7 @@ export type Database = {
           pickup_address?: string
           pickup_date?: string | null
           profile_id?: string
+          protection_plan?: boolean
           residence?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           stripe_payment_id?: string | null

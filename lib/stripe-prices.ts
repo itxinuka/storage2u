@@ -1,6 +1,7 @@
 import "server-only"
 
 import type { SelectionMap } from "@/lib/booking-catalog"
+import { PROTECTION_CATALOG_ID } from "@/lib/protection-plan"
 import { getStripe } from "@/lib/stripe"
 
 /**
@@ -13,7 +14,10 @@ import { getStripe } from "@/lib/stripe"
  * - STRIPE_PRICE_SMALL, STRIPE_PRICE_MEDIUM, STRIPE_PRICE_LARGE
  * - STRIPE_PRICE_MATTRESS, STRIPE_PRICE_FRIDGE, STRIPE_PRICE_BIKE
  * - STRIPE_PRICE_SUITCASE, STRIPE_PRICE_BACKPACK, STRIPE_PRICE_MONITOR
+ * - STRIPE_PRICE_PROTECTION (optional Protection Plan add-on)
  */
+
+export const PROTECTION_PRICE_ENV = "STRIPE_PRICE_PROTECTION"
 
 export const CATALOG_IDS = [
   "small",
@@ -140,4 +144,53 @@ export async function bookingItemsToStripeLineItems(
     price,
     quantity,
   }))
+}
+
+let protectionPriceCache: string | null | undefined
+
+export async function getProtectionStripeLineItem(): Promise<StripeLineItem | null> {
+  const fromEnv = process.env[PROTECTION_PRICE_ENV]?.trim()
+  if (fromEnv) {
+    return { price: fromEnv, quantity: 1 }
+  }
+
+  if (protectionPriceCache !== undefined) {
+    return protectionPriceCache ? { price: protectionPriceCache, quantity: 1 } : null
+  }
+
+  const stripe = getStripe()
+  if (!stripe) {
+    protectionPriceCache = null
+    return null
+  }
+
+  try {
+    const prices = await stripe.prices.list({
+      active: true,
+      limit: 1,
+      lookup_keys: [PROTECTION_CATALOG_ID],
+    })
+    const id = prices.data[0]?.id ?? null
+    protectionPriceCache = id
+    return id ? { price: id, quantity: 1 } : null
+  } catch {
+    protectionPriceCache = null
+    return null
+  }
+}
+
+export async function appendProtectionLineItem(
+  items: StripeLineItem[],
+  protectionPlan: boolean
+): Promise<StripeLineItem[]> {
+  if (!protectionPlan) return items
+
+  const protectionItem = await getProtectionStripeLineItem()
+  if (!protectionItem) {
+    throw new Error(
+      "Protection Plan is not configured in Stripe. Set STRIPE_PRICE_PROTECTION or create a price with lookup_key \"protection\"."
+    )
+  }
+
+  return [...items, protectionItem]
 }

@@ -1,12 +1,7 @@
+import Image from "next/image"
 import Link from "next/link"
-import {
-  ArrowRight,
-  PackageCheck,
-  Star,
-  Truck,
-} from "lucide-react"
+import { ArrowRight, Star } from "lucide-react"
 
-import { IconTile } from "@/components/section-header"
 import { Button } from "@/components/ui/button"
 import { siteContent } from "@/lib/site-content"
 
@@ -28,7 +23,7 @@ export function Hero() {
                   <Star key={i} className="h-3.5 w-3.5 fill-accent text-accent" />
                 ))}
               </span>
-              Loved by 5,000+ students across 20+ Canadian campuses
+              Loved by students at Memorial, StFX, Dalhousie &amp; CNA
             </div>
 
             <h1 className="text-balance text-4xl font-extrabold leading-[1.04] tracking-tight text-white sm:text-5xl lg:text-[64px]">
@@ -71,30 +66,17 @@ export function Hero() {
             </div>
           </div>
 
-          <div className="relative w-full">
-            <div className="h-[280px] overflow-hidden rounded-4xl bg-primary shadow-brand-lg shadow-primary/30 sm:h-[320px] lg:h-[360px]">
-              <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,oklch(0.58_0.22_295),oklch(0.48_0.24_295))]">
-                <p className="max-w-xs text-center text-sm font-semibold text-white/70">
-                  Campus move-out photo placeholder
-                </p>
-              </div>
-            </div>
-
-            <div className="absolute bottom-5 left-4 flex items-center gap-3 rounded-3xl bg-card px-4 py-3.5 shadow-brand-lg sm:bottom-7 sm:left-8">
-              <IconTile variant="lime" className="h-10 w-10 rounded-3xl">
-                <PackageCheck className="h-5 w-5" />
-              </IconTile>
-              <div>
-                <div className="text-base font-extrabold text-foreground">1,240+</div>
-                <div className="text-xs text-muted-foreground">boxes stored this term</div>
-              </div>
-            </div>
-
-            <div className="absolute right-4 top-5 flex items-center gap-2.5 rounded-3xl bg-card px-3.5 py-2.5 shadow-brand-lg sm:right-8">
-              <IconTile className="h-9 w-9 rounded-3xl">
-                <Truck className="h-4 w-4" />
-              </IconTile>
-              <span className="text-sm font-extrabold text-foreground">Free pickup</span>
+          <div className="relative w-full overflow-hidden rounded-4xl shadow-brand-lg shadow-primary/30">
+            <div className="relative aspect-[3/1] min-h-[200px] w-full sm:min-h-[240px] lg:min-h-[280px]">
+              <Image
+                src="/marketing/hero-moveout-family.png"
+                alt="Family and student with a Storage2U moving box on move-out day"
+                fill
+                priority
+                unoptimized
+                sizes="(max-width: 1180px) 100vw, 1180px"
+                className="object-cover object-center"
+              />
             </div>
           </div>
         </div>

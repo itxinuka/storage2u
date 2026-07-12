@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Storage2U — Student Storage Pickup & Delivery",
   description:
-    "Storage2U picks up your dorm room boxes, stores them safely, and delivers them back when you need them. Serving 20+ Canadian campuses.",
+    "Storage2U picks up your dorm room boxes, stores them safely, and delivers them back when you need them. Serving Memorial, StFX, Dalhousie, and CNA.",
 }
 
 export default function RootLayout({

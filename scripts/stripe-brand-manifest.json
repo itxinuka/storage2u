@@ -1,0 +1,27 @@
+{
+  "accountId": "acct_1TojFuRt5Yna6OxD",
+  "logoFileId": "file_1TrJiWRt5Yna6OxDxoQhPPvG",
+  "iconFileId": "file_1TrJiVRt5Yna6OxDqweeXHWy",
+  "assets": {
+    "logo": "public/brand/storage2u-logo.png",
+    "icon": "public/brand/storage2u-icon.png"
+  },
+  "colors": {
+    "primary": "#6b38d4",
+    "accent": "#bff365",
+    "background": "#fcf8ff"
+  },
+  "publicDetails": {
+    "supportEmail": "hello@storage2u.ca",
+    "website": "https://storage2u.ca",
+    "privacyPolicy": "https://storage2u.ca/privacy-policy",
+    "termsOfService": "https://storage2u.ca/terms-of-service"
+  },
+  "dashboardUrls": {
+    "branding": "https://dashboard.stripe.com/acct_1TojFuRt5Yna6OxD/test/settings/branding",
+    "checkoutBranding": "https://dashboard.stripe.com/acct_1TojFuRt5Yna6OxD/test/settings/branding/checkout",
+    "publicDetails": "https://dashboard.stripe.com/acct_1TojFuRt5Yna6OxD/test/settings/public",
+    "checkoutSettings": "https://dashboard.stripe.com/acct_1TojFuRt5Yna6OxD/test/settings/checkout",
+    "businessDetails": "https://dashboard.stripe.com/acct_1TojFuRt5Yna6OxD/test/settings/business-details"
+  }
+}

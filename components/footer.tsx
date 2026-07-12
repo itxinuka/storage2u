@@ -18,6 +18,7 @@ const columns = [
       { label: "Blog", href: "/blog" },
       { label: "Contact", href: "/contact" },
       { label: "Privacy policy", href: "/privacy" },
+      { label: "Terms of service", href: "/terms" },
     ],
   },
   {
@@ -66,7 +67,11 @@ export function Footer() {
               Privacy
             </Link>
             {" · "}
-            Terms · Cookies
+            <Link href="/terms" className="hover:text-white">
+              Terms
+            </Link>
+            {" · "}
+            Cookies
           </p>
         </div>
       </div>

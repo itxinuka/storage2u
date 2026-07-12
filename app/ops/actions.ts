@@ -294,19 +294,10 @@ export async function addWarehouse(
 }
 
 const UNIVERSITY_SHORT: Record<string, string> = {
-  "University of British Columbia": "UBC",
-  "Simon Fraser University": "SFU",
-  "University of Toronto": "U of T",
-  "McGill University": "McGill",
-  "University of Waterloo": "Waterloo",
-  "Queen's University": "Queen's",
-  "Western University": "Western",
-  "McMaster University": "McMaster",
-  "University of Alberta": "U of A",
-  "York University": "York",
-  "Concordia University": "Concordia",
-  "Dalhousie University": "Dalhousie",
   "Memorial University": "Memorial",
+  "St. Francis Xavier University": "StFX",
+  "Dalhousie University": "Dalhousie",
+  "College of the North Atlantic": "CNA",
 }
 
 function shortenUniversity(name: string): string {
@@ -661,5 +652,118 @@ export async function deleteWarehouse(warehouseId: string): Promise<ActionResult
   }
 
   revalidatePath("/ops/warehouses")
+  return { success: true }
+}
+
+type AddBookingBlockInput = {
+  blockDate: string
+  scope: "entire_day" | "specific_windows"
+  timeWindowIds?: string[]
+  reason?: string
+}
+
+export async function addBookingBlock(
+  input: AddBookingBlockInput
+): Promise<ActionResult> {
+  const authError = await requireOpsStaff()
+  if (authError) return { success: false, error: authError.error }
+
+  const { userId } = await auth()
+  const blockDate = input.blockDate.trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(blockDate)) {
+    return { success: false, error: "A valid date is required" }
+  }
+
+  const reason = input.reason?.trim() || null
+  const supabase = createServiceRoleClient()
+
+  if (input.scope === "entire_day") {
+    const { error: clearError } = await supabase
+      .from("booking_blocks")
+      .delete()
+      .eq("block_date", blockDate)
+
+    if (clearError) {
+      return { success: false, error: clearError.message }
+    }
+
+    const { error } = await supabase.from("booking_blocks").insert({
+      block_date: blockDate,
+      time_window_id: null,
+      reason,
+      created_by: userId,
+    })
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+  } else {
+    const windowIds = (input.timeWindowIds ?? []).filter((id) =>
+      ["morning", "afternoon", "evening"].includes(id)
+    )
+
+    if (windowIds.length === 0) {
+      return { success: false, error: "Select at least one time window" }
+    }
+
+    const { data: existing } = await supabase
+      .from("booking_blocks")
+      .select("time_window_id")
+      .eq("block_date", blockDate)
+
+    const hasFullDay = (existing ?? []).some((row) => row.time_window_id === null)
+    if (hasFullDay) {
+      return {
+        success: false,
+        error: "That date is already fully blocked. Remove the full-day block first.",
+      }
+    }
+
+    const existingIds = new Set(
+      (existing ?? [])
+        .map((row) => row.time_window_id)
+        .filter((id): id is string => Boolean(id))
+    )
+
+    const toInsert = windowIds
+      .filter((id) => !existingIds.has(id))
+      .map((time_window_id) => ({
+        block_date: blockDate,
+        time_window_id,
+        reason,
+        created_by: userId,
+      }))
+
+    if (toInsert.length === 0) {
+      return { success: false, error: "Those time windows are already blocked" }
+    }
+
+    const { error } = await supabase.from("booking_blocks").insert(toInsert)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+  }
+
+  revalidatePath("/ops/availability")
+  return { success: true }
+}
+
+export async function removeBookingBlock(blockId: string): Promise<ActionResult> {
+  const authError = await requireOpsStaff()
+  if (authError) return { success: false, error: authError.error }
+
+  if (!blockId) {
+    return { success: false, error: "Block is required" }
+  }
+
+  const supabase = createServiceRoleClient()
+  const { error } = await supabase.from("booking_blocks").delete().eq("id", blockId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath("/ops/availability")
   return { success: true }
 }

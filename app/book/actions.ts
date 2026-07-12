@@ -11,7 +11,7 @@ import {
 } from "@/lib/booking-catalog"
 import type { Database } from "@/lib/database.types"
 import { finalizeBookingPayment } from "@/lib/stripe-booking"
-import { bookingItemsToStripeLineItems } from "@/lib/stripe-prices"
+import { bookingItemsToStripeLineItems, appendProtectionLineItem } from "@/lib/stripe-prices"
 import {
   addToExistingSubscription,
   createSubscriptionCheckout,
@@ -21,6 +21,9 @@ import {
   retrieveCheckoutSession,
 } from "@/lib/stripe"
 import { humanizeBookingError } from "@/lib/booking-action-errors"
+import { monthlyTotalWithProtection } from "@/lib/protection-plan"
+import { validateBookingSchedule, type BookingBlock } from "@/lib/booking-availability"
+import { getBookingBlocks } from "@/lib/ops/availability-data"
 import { createServiceRoleClient } from "@/lib/supabase/service"
 import { debugLog } from "@/lib/debug-log"
 
@@ -38,6 +41,7 @@ export type CreateBookingInput = {
   timeWindow: string
   deliveryDate?: string | null
   notes?: string | null
+  protectionPlan?: boolean
 }
 
 export type CreateBookingResult =
@@ -144,6 +148,8 @@ export async function createBooking(
   const { userId, email, fullName } = identity
   const lineItems = selectionToLineItems(input.selection)
   const { total, count } = computeSelectionTotals(input.selection)
+  const protectionPlan = Boolean(input.protectionPlan)
+  const monthlyTotal = monthlyTotalWithProtection(total, protectionPlan)
 
   if (count === 0) {
     return { success: false, error: "Add at least one box or item.", code: "validation" }
@@ -155,6 +161,22 @@ export async function createBooking(
 
   if (!input.scheduledDate || !input.timeWindow) {
     return { success: false, error: "Please pick a date and time window.", code: "validation" }
+  }
+
+  let bookingBlocks: BookingBlock[] = []
+  try {
+    bookingBlocks = await getBookingBlocks(input.scheduledDate)
+  } catch {
+    bookingBlocks = []
+  }
+
+  const scheduleError = validateBookingSchedule(
+    input.scheduledDate,
+    input.timeWindow,
+    bookingBlocks
+  )
+  if (scheduleError) {
+    return { success: false, error: scheduleError, code: "validation" }
   }
 
   const supabase = createBookingDb()
@@ -204,7 +226,8 @@ export async function createBooking(
       residence: input.residence.trim() || null,
       contact_phone: input.phone.trim(),
       time_window: input.timeWindow,
-      monthly_total_cents: total * 100,
+      monthly_total_cents: monthlyTotal * 100,
+      protection_plan: protectionPlan,
       notes: input.notes?.trim() || null,
       status: "pending_payment",
     })
@@ -314,7 +337,7 @@ export async function createCheckoutSession(
 
   const { data: booking } = await supabase
     .from("bookings")
-    .select("id, profile_id, status, booking_items(catalog_id, qty)")
+    .select("id, profile_id, status, protection_plan, booking_items(catalog_id, qty)")
     .eq("id", bookingId)
     .maybeSingle()
 
@@ -333,11 +356,14 @@ export async function createCheckoutSession(
 
   let stripeLineItems
   try {
-    stripeLineItems = await bookingItemsToStripeLineItems(
-      (booking.booking_items ?? []).map((item) => ({
-        catalog_id: item.catalog_id,
-        qty: item.qty,
-      }))
+    stripeLineItems = await appendProtectionLineItem(
+      await bookingItemsToStripeLineItems(
+        (booking.booking_items ?? []).map((item) => ({
+          catalog_id: item.catalog_id,
+          qty: item.qty,
+        }))
+      ),
+      booking.protection_plan
     )
   } catch (err) {
     return {

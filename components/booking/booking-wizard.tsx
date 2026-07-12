@@ -40,11 +40,28 @@ import {
   type BookingMode,
   type SelectionMap,
 } from "@/lib/booking-catalog"
+import {
+  isDateFullyBlocked,
+  isTimeWindowBlocked,
+  isTimeWindowLabelBlocked,
+  parseTimeWindowId,
+  timeWindowLabel,
+  type BookingBlock,
+} from "@/lib/booking-availability"
+import {
+  monthlyTotalWithProtection,
+  PLUS_FEE_MONTHLY,
+  PLUS_LIMIT,
+  protectionCopy,
+  STANDARD_LIMIT,
+  formatProtectionLimit,
+} from "@/lib/protection-plan"
 import { siteContent } from "@/lib/site-content"
 import { cn } from "@/lib/utils"
 
 type BookingWizardProps = {
   initialMode?: BookingMode
+  bookingBlocks?: BookingBlock[]
 }
 
 type FormState = {
@@ -56,6 +73,7 @@ type FormState = {
   scheduledDate: string
   timeWindow: string
   deliveryDate: string
+  protectionPlan: boolean
 }
 
 const defaultSelection: SelectionMap = { medium: 0, large: 0 }
@@ -71,13 +89,14 @@ type BookingDraft = {
 function defaultFormState(): FormState {
   return {
     selection: { ...defaultSelection },
-    university: siteContent.universities[1]?.[0] ?? "",
+    university: siteContent.universities[0]?.name ?? "",
     residence: RESIDENCES[0],
     address: "",
     phone: "",
     scheduledDate: "",
     timeWindow: "Afternoon (12–4 PM)",
     deliveryDate: "",
+    protectionPlan: false,
   }
 }
 
@@ -98,7 +117,7 @@ function readStoredBookingDraft(initialMode: BookingMode): BookingDraft {
     const draft = JSON.parse(raw) as BookingDraft
     return {
       mode: draft.mode === "delivery" ? "delivery" : "pickup",
-      step: Math.min(Math.max(Number(draft.step) || 0, 0), 4),
+      step: Math.min(Math.max(Number(draft.step) || 0, 0), 3),
       form: { ...defaultFormState(), ...draft.form, selection: draft.form?.selection ?? defaultSelection },
     }
   } catch {
@@ -163,9 +182,11 @@ function Counter({
 function ScheduleCalendar({
   value,
   onChange,
+  blocks,
 }: {
   value: string
   onChange: (iso: string) => void
+  blocks: BookingBlock[]
 }) {
   const today = useMemo(() => {
     const d = new Date()
@@ -200,19 +221,21 @@ function ScheduleCalendar({
   for (let d = 1; d <= daysInMonth; d++) {
     const iso = toIso(d)
     const past = new Date(year, month, d) < today
+    const blocked = isDateFullyBlocked(iso, blocks)
+    const disabled = past || blocked
     const selected = iso === value
     cells.push(
       <button
         key={d}
         type="button"
-        disabled={past}
+        disabled={disabled}
         aria-pressed={selected}
         onClick={() => onChange(iso)}
         className={cn(
           "flex aspect-square items-center justify-center rounded-full text-sm font-semibold transition-colors",
           selected
             ? "bg-primary text-primary-foreground"
-            : past
+            : disabled
               ? "cursor-not-allowed text-border"
               : "bg-muted text-foreground hover:bg-purple-100"
         )}
@@ -299,12 +322,15 @@ function ModeToggle({
 function OrderSummary({
   mode,
   selection,
+  protectionPlan,
 }: {
   mode: BookingMode
   selection: SelectionMap
+  protectionPlan: boolean
 }) {
   const M = BOOKING_MODES[mode]
   const { total, boxCount, itemCount } = computeSelectionTotals(selection)
+  const monthlyTotal = monthlyTotalWithProtection(total, protectionPlan)
 
   return (
     <aside className="space-y-3 self-start lg:sticky lg:top-24">
@@ -327,6 +353,14 @@ function OrderSummary({
                 </div>
               ) : null
             )}
+            {protectionPlan ? (
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="text-muted-foreground">Protection Plan</span>
+                <span className="font-semibold text-foreground">
+                  ${PLUS_FEE_MONTHLY}/mo
+                </span>
+              </div>
+            ) : null}
           </div>
           <div className="h-px bg-border" />
           <div className="flex items-baseline justify-between">
@@ -334,7 +368,7 @@ function OrderSummary({
               {boxCount} boxes · {itemCount} items
             </span>
             <span className="text-2xl font-extrabold text-foreground">
-              ${total}
+              ${monthlyTotal}
               <span className="text-sm font-medium text-muted-foreground">/mo</span>
             </span>
           </div>
@@ -346,9 +380,41 @@ function OrderSummary({
       </Card>
       <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
         <ShieldCheck className="h-4 w-4 shrink-0" />
-        Everything insured up to $500 · cancel anytime
+        {protectionPlan
+          ? `Protection Plan · up to ${formatProtectionLimit(PLUS_LIMIT)}`
+          : protectionCopy.bookingSidebar}
       </div>
     </aside>
+  )
+}
+
+function MobilePriceBar({
+  selection,
+  protectionPlan,
+}: {
+  selection: SelectionMap
+  protectionPlan: boolean
+}) {
+  const { total, boxCount, itemCount } = computeSelectionTotals(selection)
+  const monthlyTotal = monthlyTotalWithProtection(total, protectionPlan)
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur-md lg:hidden">
+      <div className="flex items-center justify-between px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+            Monthly total
+          </p>
+          <p className="text-xl font-extrabold leading-tight text-foreground">
+            ${monthlyTotal}
+            <span className="text-sm font-medium text-muted-foreground">/mo</span>
+          </p>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {boxCount} boxes · {itemCount} items
+        </p>
+      </div>
+    </div>
   )
 }
 
@@ -361,7 +427,10 @@ function formatDisplayDate(iso: string) {
   })
 }
 
-export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
+export function BookingWizard({
+  initialMode = "pickup",
+  bookingBlocks = [],
+}: BookingWizardProps) {
   const { isSignedIn } = useAuth()
   const { user } = useUser()
   const { openSignIn } = useClerk()
@@ -383,6 +452,7 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
   const M = BOOKING_MODES[mode]
   const steps = M.steps.map((label, i) => ({ id: i + 1, label }))
   const totals = computeSelectionTotals(form.selection)
+  const monthlyTotal = monthlyTotalWithProtection(totals.total, form.protectionPlan)
 
   const updateSelection = (id: string, qty: number) => {
     setForm((prev) => ({
@@ -405,6 +475,7 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
         timeWindow: form.timeWindow,
         deliveryDate: mode === "pickup" ? form.deliveryDate || null : null,
         notes: null,
+        protectionPlan: form.protectionPlan,
       })
 
       if (!result.success) {
@@ -450,7 +521,7 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
   useEffect(() => {
     if (searchParams.get("checkout") === "cancelled") {
       toast.error("Payment cancelled. Your booking is saved — complete checkout when ready.")
-      setStep(4)
+      setStep(3)
     }
   }, [searchParams])
 
@@ -490,6 +561,26 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
     setForm((prev) => (prev.phone.trim() ? prev : { ...prev, phone }))
   }, [isSignedIn, user])
 
+  useEffect(() => {
+    if (!form.scheduledDate) return
+    if (isDateFullyBlocked(form.scheduledDate, bookingBlocks)) {
+      setForm((prev) => ({ ...prev, scheduledDate: "", timeWindow: "" }))
+      return
+    }
+    if (
+      form.timeWindow &&
+      isTimeWindowLabelBlocked(form.scheduledDate, form.timeWindow, bookingBlocks)
+    ) {
+      const firstAvailable = TIME_WINDOWS.find(
+        (w) => !isTimeWindowBlocked(form.scheduledDate, w.id, bookingBlocks)
+      )
+      setForm((prev) => ({
+        ...prev,
+        timeWindow: firstAvailable ? timeWindowLabel(firstAvailable.id) : "",
+      }))
+    }
+  }, [bookingBlocks, form.scheduledDate, form.timeWindow])
+
   const canContinue = useMemo(() => {
     if (step === 0) return totals.count > 0
     if (step === 1)
@@ -498,12 +589,18 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
         form.address.trim().length > 0 &&
         form.phone.trim().length > 0
       )
-    if (step === 2) return form.scheduledDate.length > 0 && form.timeWindow.length > 0
+    if (step === 2) {
+      if (!form.scheduledDate || !form.timeWindow) return false
+      if (isDateFullyBlocked(form.scheduledDate, bookingBlocks)) return false
+      const windowId = parseTimeWindowId(form.timeWindow)
+      if (!windowId) return false
+      return !isTimeWindowBlocked(form.scheduledDate, windowId, bookingBlocks)
+    }
     return true
-  }, [step, totals.count, form])
+  }, [step, totals.count, form, bookingBlocks])
 
   const handleNext = () => {
-    if (step < 4) {
+    if (step < 3) {
       if (!canContinue) {
         toast.error("Please complete the required fields.")
         return
@@ -616,7 +713,7 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1180px] px-6 py-8 pb-20">
+      <main className="mx-auto max-w-[1180px] px-6 py-8 pb-32 lg:pb-20">
         {step === 0 ? <ModeToggle mode={mode} onChange={setMode} /> : null}
         <div className="mb-8">
           <StepIndicator steps={steps} current={step + 1} />
@@ -710,9 +807,9 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
                           setForm((prev) => ({ ...prev, university: e.target.value }))
                         }
                       >
-                        {siteContent.universities.map(([name]) => (
+                        {siteContent.universities.map(({ name, short }) => (
                           <option key={name} value={name}>
-                            {name}
+                            {short}
                           </option>
                         ))}
                       </select>
@@ -765,28 +862,53 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
                   <StepHead title={M.s3Title} sub={M.s3Sub} />
                   <ScheduleCalendar
                     value={form.scheduledDate}
+                    blocks={bookingBlocks}
                     onChange={(iso) =>
-                      setForm((prev) => ({ ...prev, scheduledDate: iso }))
+                      setForm((prev) => {
+                        const next = { ...prev, scheduledDate: iso }
+                        if (
+                          prev.timeWindow &&
+                          isTimeWindowLabelBlocked(iso, prev.timeWindow, bookingBlocks)
+                        ) {
+                          const firstAvailable = TIME_WINDOWS.find(
+                            (w) => !isTimeWindowBlocked(iso, w.id, bookingBlocks)
+                          )
+                          next.timeWindow = firstAvailable
+                            ? timeWindowLabel(firstAvailable.id)
+                            : ""
+                        }
+                        return next
+                      })
                     }
                   />
                   <div className="mt-5">
                     <FieldLabel>{M.schedLabel}</FieldLabel>
                     <div className="flex flex-wrap gap-2.5">
                       {TIME_WINDOWS.map((window) => {
-                        const label = `${window.label} (${window.hours})`
+                        const label = timeWindowLabel(window.id)
                         const on = form.timeWindow === label
+                        const blocked =
+                          form.scheduledDate.length > 0 &&
+                          isTimeWindowBlocked(
+                            form.scheduledDate,
+                            window.id,
+                            bookingBlocks
+                          )
                         return (
                           <button
                             key={window.id}
                             type="button"
+                            disabled={blocked}
                             onClick={() =>
                               setForm((prev) => ({ ...prev, timeWindow: label }))
                             }
                             className={cn(
                               "min-w-[7rem] flex-1 rounded-2xl px-5 py-3 text-left transition-shadow",
-                              on
-                                ? "bg-purple-50 shadow-[inset_0_0_0_2px_var(--color-primary)]"
-                                : "bg-card shadow-[inset_0_0_0_1.5px_var(--color-border)]"
+                              blocked
+                                ? "cursor-not-allowed opacity-40"
+                                : on
+                                  ? "bg-purple-50 shadow-[inset_0_0_0_2px_var(--color-primary)]"
+                                  : "bg-card shadow-[inset_0_0_0_1.5px_var(--color-border)]"
                             )}
                           >
                             <span
@@ -853,13 +975,65 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
                         />
                       ) : null}
                     </CardContent>
+                    <div className="border-t border-border px-6 py-5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm((prev) => ({
+                            ...prev,
+                            protectionPlan: !prev.protectionPlan,
+                          }))
+                        }
+                        className={cn(
+                          "w-full rounded-2xl px-4 py-4 text-left transition-shadow",
+                          form.protectionPlan
+                            ? "bg-purple-50 shadow-[inset_0_0_0_2px_var(--color-primary)]"
+                            : "bg-muted shadow-[inset_0_0_0_1.5px_var(--color-border)]"
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-bold text-foreground">
+                              Add Protection Plan
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              {formatProtectionLimit(PLUS_FEE_MONTHLY)}/mo · cover up to{" "}
+                              {formatProtectionLimit(PLUS_LIMIT)} per booking
+                            </p>
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              Standard Protection ({formatProtectionLimit(STANDARD_LIMIT)}{" "}
+                              included).{" "}
+                              <Link
+                                href="/terms#protection-plan"
+                                className="font-semibold text-primary underline-offset-4 hover:underline"
+                              >
+                                View terms
+                              </Link>
+                            </p>
+                          </div>
+                          <span
+                            className={cn(
+                              "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                              form.protectionPlan
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-card"
+                            )}
+                            aria-hidden
+                          >
+                            {form.protectionPlan ? (
+                              <Check className="h-3.5 w-3.5" />
+                            ) : null}
+                          </span>
+                        </div>
+                      </button>
+                    </div>
                     <div className="flex items-center justify-between bg-muted px-6 py-4">
                       <div>
                         <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                           Monthly total
                         </p>
                         <p className="text-2xl font-extrabold text-foreground">
-                          ${totals.total}
+                          ${monthlyTotal}
                           <span className="text-sm font-normal text-muted-foreground">/mo</span>
                         </p>
                       </div>
@@ -868,38 +1042,6 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
                       </Badge>
                     </div>
                   </Card>
-                </div>
-              ) : null}
-
-              {step === 4 ? (
-                <div>
-                  <StepHead
-                    title="Secure checkout"
-                    sub="You're billed monthly for the boxes you store. Cancel anytime — no penalties."
-                  />
-                  <div className="space-y-4">
-                    <div className="rounded-3xl bg-muted px-5 py-4">
-                      <p className="text-sm text-muted-foreground">Monthly total</p>
-                      <p className="text-3xl font-extrabold text-foreground">
-                        ${totals.total}
-                        <span className="text-base font-medium text-muted-foreground">/mo</span>
-                      </p>
-                    </div>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li className="flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
-                        Billed today, then monthly on the 1st
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
-                        Pay with card, Apple Pay, or Google Pay via Stripe
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4 shrink-0 text-primary" />
-                        Your booking details are saved before checkout
-                      </li>
-                    </ul>
-                  </div>
                 </div>
               ) : null}
 
@@ -915,7 +1057,7 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
                 ) : (
                   <span />
                 )}
-                {step < 4 ? (
+                {step < 3 ? (
                   <Button
                     onClick={handleNext}
                     disabled={!canContinue}
@@ -930,16 +1072,22 @@ export function BookingWizard({ initialMode = "pickup" }: BookingWizardProps) {
                     disabled={submitting}
                   >
                     <Check className="h-4 w-4" />
-                    {submitting ? "Redirecting…" : "Continue to secure checkout"}
+                    {submitting ? "Redirecting…" : M.payCta}
                   </Button>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          <OrderSummary mode={mode} selection={form.selection} />
+          <OrderSummary
+            mode={mode}
+            selection={form.selection}
+            protectionPlan={form.protectionPlan}
+          />
         </div>
       </main>
+
+      <MobilePriceBar selection={form.selection} protectionPlan={form.protectionPlan} />
     </div>
   )
 }

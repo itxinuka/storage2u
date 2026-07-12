@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowRight,
@@ -62,12 +63,14 @@ export function MoveIn() {
           </div>
 
           <div className="relative">
-            <div className="h-[420px] overflow-hidden rounded-[32px] bg-purple-soft shadow-brand-lg">
-              <div className="flex h-full items-center justify-center">
-                <p className="text-sm font-semibold text-muted-foreground">
-                  Dorm move-in photo placeholder
-                </p>
-              </div>
+            <div className="relative h-[420px] overflow-hidden rounded-[32px] shadow-brand-lg">
+              <Image
+                src="/marketing/move-in-dorm.png"
+                alt="Student carrying a Storage2U box into a dorm room on move-in day"
+                fill
+                sizes="(max-width: 1024px) 100vw, 560px"
+                className="object-cover object-center"
+              />
             </div>
             <div className="absolute bottom-6 right-4 flex items-center gap-3 rounded-3xl bg-card px-4 py-3 shadow-brand-lg">
               <IconTile variant="lime" className="h-10 w-10 rounded-2xl">

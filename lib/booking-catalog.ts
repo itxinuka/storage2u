@@ -78,7 +78,7 @@ export function selectionToLineItems(selection: SelectionMap) {
 
 export const BOOKING_MODES = {
   pickup: {
-    steps: ["Items", "Pickup", "Schedule", "Review", "Payment"],
+    steps: ["Items", "Pickup", "Schedule", "Review"],
     s1Title: "What are you storing?",
     s1Sub:
       "Add boxes and any bigger items. We'll do a final count at pickup — you only pay for what you store.",
@@ -103,7 +103,7 @@ export const BOOKING_MODES = {
     confVerb: "Our team will be at",
   },
   delivery: {
-    steps: ["Items", "Deliver to", "Move-in day", "Review", "Payment"],
+    steps: ["Items", "Deliver to", "Move-in day", "Review"],
     s1Title: "What should we deliver?",
     s1Sub:
       "Your stored boxes plus anything shipped ahead — we'll bring it to your new room on move-in day.",

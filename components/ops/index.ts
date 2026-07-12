@@ -1,3 +1,4 @@
+export { AvailabilityView } from "./availability-view"
 export { ConfirmDialog } from "./confirm-dialog"
 export { CreateOrderModal } from "./create-order-modal"
 export { CustomersView } from "./customers-view"
