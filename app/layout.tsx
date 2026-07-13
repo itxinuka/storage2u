@@ -3,6 +3,8 @@ import { ClerkProvider } from "@clerk/nextjs"
 import { shadcn } from "@clerk/ui/themes"
 import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google"
 
+import { PostHogHeadScript } from "@/components/posthog-head-script"
+import { TawkToScript } from "@/components/tawk-to-script"
 import { Toaster } from "@/components/ui/sonner"
 
 import "./globals.css"
@@ -34,6 +36,10 @@ export default function RootLayout({
       lang="en"
       className={`${plusJakarta.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <PostHogHeadScript />
+        <TawkToScript />
+      </head>
       <body className="min-h-full flex flex-col font-sans">
         <ClerkProvider appearance={{ theme: shadcn }}>
           {children}

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     "How Storage2U collects, uses, and protects your personal information when you use our student storage services.",
 }
 
-const LAST_UPDATED = "July 2, 2026"
+const LAST_UPDATED = "July 12, 2026"
 const CONTACT_EMAIL = "hello@storage2u.ca"
 const WEBSITE_URL = "https://www.storage2u.ca"
 
@@ -119,18 +119,69 @@ export default function PrivacyPage() {
             <Subheading>Technical Information</Subheading>
             <p>
               When visiting our website, certain information may be collected
-              automatically, including:
+              automatically through analytics tools, including:
             </p>
             <ul className="list-disc space-y-2 pl-6">
-              <li>IP address</li>
-              <li>Browser type</li>
-              <li>Device type</li>
-              <li>Pages visited</li>
+              <li>IP address and approximate location derived from IP</li>
+              <li>Browser type and version</li>
+              <li>Device type and operating system</li>
+              <li>Pages visited and navigation paths</li>
+              <li>Clicks and other on-page interactions</li>
               <li>Date and time of access</li>
+              <li>
+                Session recordings of how you interact with the site (when
+                recording is active)
+              </li>
+              <li>
+                Heatmap and interaction data used to understand how pages are
+                used
+              </li>
             </ul>
             <p>
               This information helps us understand how our website is used and
               improve our services.
+            </p>
+          </Section>
+
+          <Section title="Analytics Providers">
+            <p>
+              We use PostHog (PostHog Inc.) for product analytics on our
+              website. PostHog helps us understand site usage, improve the user
+              experience, and diagnose technical issues.
+            </p>
+            <p>
+              When you visit our website, PostHog may collect and process the
+              following on our behalf:
+            </p>
+            <ul className="list-disc space-y-2 pl-6">
+              <li>Usage events such as pageviews and on-page interactions</li>
+              <li>Technical and device information (browser, device type)</li>
+              <li>Approximate location derived from IP address</li>
+              <li>Session recordings of your interactions with the site</li>
+              <li>Heatmap and click data showing how pages are used</li>
+            </ul>
+            <p>
+              PostHog uses cookies and/or local storage to recognize returning
+              browsers and maintain a distinct identifier. This analytics data
+              is not linked to your account identity unless you are signed in and
+              we explicitly associate your account with analytics data.
+            </p>
+            <p>
+              Analytics data is processed on PostHog&apos;s infrastructure in
+              the United States. We do not use PostHog for advertising, and we
+              do not sell analytics data to third parties.
+            </p>
+            <p>
+              For more information about how PostHog handles data, see{" "}
+              <Link
+                href="https://posthog.com/privacy"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                PostHog&apos;s Privacy Policy
+              </Link>
+              .
             </p>
           </Section>
 
@@ -227,6 +278,7 @@ export default function PrivacyPage() {
               <li>Payment processors</li>
               <li>Cloud hosting providers</li>
               <li>Logistics or delivery partners</li>
+              <li>Analytics providers (PostHog)</li>
             </ul>
             <p>
               These providers only receive information necessary to perform

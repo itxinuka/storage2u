@@ -8,7 +8,7 @@ export const siteContent = {
     stats: [
       ["5,000+", "students served"],
       ["4", "Atlantic campuses"],
-      ["$0", "hidden fees"],
+      ["Free", "pickup & delivery"],
     ] as const,
   },
 
@@ -60,7 +60,7 @@ export const siteContent = {
       icon: "calendar-check" as const,
       n: "01",
       title: "Book a pickup",
-      body: "Tell us how many boxes you've got and pick a one-hour window. We come straight to your dorm or apartment — no hauling across campus.",
+      body: "Tell us how many boxes you need and pick a one-hour window. We deliver the boxes to your door on pickup day, then haul everything away — no trip to the store, no hauling across campus.",
     },
     {
       icon: "shield-check" as const,
@@ -155,7 +155,7 @@ export const siteContent = {
     ["Pricing", { us: "Per box, monthly", them: "Fixed unit — pay for empty space" }],
     ["Contract", { us: "Month-to-month, cancel anytime", them: "Often locked into 6–12 months" }],
     ["Climate control", { us: true, them: "Extra fee, if offered" }],
-    ["Inventory photos", { us: "Every box catalogued", them: false }],
+    ["Moving boxes", { us: "Delivered to your door on pickup day", them: "You buy and transport them" }],
     ["Protection", { us: protectionCopy.compareUs, them: protectionCopy.compareThem }],
     ["Effort on you", { us: "Pack boxes — that's it", them: "Drive, lift, load, repeat" }],
   ] as const,

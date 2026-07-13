@@ -5,6 +5,9 @@
     },
     "stripe": {
       "enabled": true
+    },
+    "posthog": {
+      "enabled": true
     }
   }
 }

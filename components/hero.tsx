@@ -32,9 +32,9 @@ export function Hero() {
             </h1>
 
             <p className="max-w-[600px] text-pretty text-lg leading-relaxed text-white/80">
-              Tell us how many boxes you&apos;ve got. We pick them up from your dorm,
-              store them safely, and bring them back whenever you need them — for a
-              flat monthly fee per box.
+              Tell us how many boxes you need. We deliver them on pickup day, store
+              everything safely, and bring it back whenever you need it — for a flat
+              monthly fee per box.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-3">
