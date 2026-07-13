@@ -14,15 +14,22 @@ export type CatalogEntry = {
   tag?: boolean
 }
 
-/** Boxes shown in booking — medium & large only (matches prototype). */
-export const BOOKING_BOXES = siteContent.boxes.filter((b) => b.id !== "small")
+/** Full storage catalogue (prices from site-content). */
+export const BOOKING_CATALOG: CatalogEntry[] = siteContent.items.map((item) => ({
+  id: item.id,
+  name: item.name,
+  price: item.price,
+  kind: item.kind,
+  icon: item.icon,
+  dims: "dims" in item ? item.dims : undefined,
+  blurb: "blurb" in item ? item.blurb : undefined,
+}))
 
-export const BOOKING_ITEMS = siteContent.items
+/** Boxes section in the booking wizard. */
+export const BOOKING_BOXES = BOOKING_CATALOG.filter((b) => b.kind === "box")
 
-export const BOOKING_CATALOG: CatalogEntry[] = [
-  ...BOOKING_BOXES.map((b) => ({ ...b, kind: "box" as const })),
-  ...BOOKING_ITEMS.map((i) => ({ ...i, kind: "item" as const })),
-]
+/** Common items section in the booking wizard. */
+export const BOOKING_ITEMS = BOOKING_CATALOG.filter((b) => b.kind === "item")
 
 export const RESIDENCES = [
   "On-campus residence",
@@ -59,6 +66,16 @@ export function computeSelectionTotals(selection: SelectionMap) {
   return { total, count, boxCount, itemCount }
 }
 
+export function formatSelectionCounts(selection: SelectionMap): string {
+  const { count, boxCount, itemCount } = computeSelectionTotals(selection)
+  if (count === 0) return "0 items"
+  if (boxCount > 0 && itemCount > 0) {
+    return `${boxCount} ${boxCount === 1 ? "box" : "boxes"} · ${itemCount} ${itemCount === 1 ? "item" : "items"}`
+  }
+  if (boxCount > 0) return `${boxCount} ${boxCount === 1 ? "box" : "boxes"}`
+  return `${itemCount} ${itemCount === 1 ? "item" : "items"}`
+}
+
 export function selectionToLineItems(selection: SelectionMap) {
   return Object.entries(selection)
     .filter(([, qty]) => qty > 0)
@@ -81,9 +98,9 @@ export const BOOKING_MODES = {
     steps: ["Items", "Pickup", "Schedule", "Review"],
     s1Title: "What are you storing?",
     s1Sub:
-      "Add boxes and any bigger items. We'll do a final count at pickup — you only pay for what you store.",
+      "Add the items you'll store. We'll do a final count at pickup — you only pay for what you store.",
     s1Note:
-      "Storing something else — surfboard, instrument, monitor? Add a note at pickup and we'll price it on the spot.",
+      "Storing something else — instrument, lamp, odd-sized gear? Add a note at pickup and we'll price it on the spot.",
     s2Title: "Where should we pick up?",
     s2Sub:
       "We'll come straight to your door on pickup day — no hauling across campus.",
@@ -106,9 +123,9 @@ export const BOOKING_MODES = {
     steps: ["Items", "Deliver to", "Move-in day", "Review"],
     s1Title: "What should we deliver?",
     s1Sub:
-      "Your stored boxes plus anything shipped ahead — we'll bring it to your new room on move-in day.",
+      "Your stored items plus anything shipped ahead — we'll bring it to your new room on move-in day.",
     s1Note:
-      "Shipping something ahead — surfboard, instrument, monitor? Add a note and we'll handle it on move-in day.",
+      "Shipping something ahead — instrument, lamp, odd-sized gear? Add a note and we'll handle it on move-in day.",
     s2Title: "Where's your new place?",
     s2Sub: "We'll deliver straight to your dorm or apartment on move-in day.",
     addrLabel: "New room / unit & address",

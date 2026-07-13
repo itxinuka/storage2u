@@ -5,18 +5,16 @@
   const Icon = window.Icon;
   const D = window.S2U;
 
-  // Boxes shown in booking — medium & large only.
-  const BOXES = D.boxes.filter((b) => b.id !== "small");
-  // Unified catalog for price/name lookup across boxes + items.
-  const CATALOG = [...BOXES, ...D.items];
+  // Unified catalog for price/name lookup.
+  const CATALOG = D.items;
   const get = (id) => CATALOG.find((x) => x.id === id) || {};
   const priceOf = (id) => get(id).price || 0;
 
-  // Sample selection used across the static flow (boxes + a couple of items).
-  const SEL = { medium: 3, large: 1, mattress: 1, fridge: 1 };
+  // Sample selection used across the static flow.
+  const SEL = { large_box: 3, fridge: 1, bike: 1 };
   const TOTAL = Object.entries(SEL).reduce((s, [id, n]) => s + priceOf(id) * n, 0);
   const COUNT = Object.values(SEL).reduce((a, b) => a + b, 0);
-  const BOX_COUNT = (SEL.medium || 0) + (SEL.large || 0);
+  const BOX_COUNT = SEL.large_box || 0;
   const ITEM_COUNT = COUNT - BOX_COUNT;
   const ORDER = { university: "University of Toronto", residence: "On-campus residence — Chestnut", address: "89 Chestnut St, Room 412", phone: "(416) 555-0148", date: "Saturday, Sep 19", window: "Afternoon (12–4 PM)", delivery: "Sunday, Jan 4" };
 
@@ -68,7 +66,6 @@
 
   // Local Lucide paths for catalog items the bundled Icon set doesn't carry.
   const ITEM_PATHS = {
-    mattress: ["M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8", "M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4", "M12 4v6", "M2 18h20"],
     fridge: ["M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z", "M5 10h14", "M9 6v1", "M9 14v3"],
     bike: [{ c: [18.5, 17.5, 3.5] }, { c: [5.5, 17.5, 3.5] }, { c: [15, 5, 1] }, "M12 17.5V14l-3-3 4-3 2 3h2"],
     suitcase: ["M6 6h12a2 2 0 0 1 2 2v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8a2 2 0 0 1 2-2z", "M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2", "M9 11v6", "M15 11v6"],
@@ -164,24 +161,7 @@
       <div>
         <StepHead title={M.s1Title} sub={M.s1Sub} />
 
-        <span className="field-label">Boxes</span>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>
-          {BOXES.map((b) => {
-            const n = SEL[b.id] || 0;
-            return (
-              <div key={b.id} className={"box-row" + (n > 0 ? " sel" : "")}>
-                <span className="icon-tile soft" style={{ width: 48, height: 48 }}><ItemIcon name="box" size={22} color="var(--brand-primary)" /></span>
-                <div className="meta">
-                  <div className="nm">{b.name} <span style={{ fontWeight: 600, color: "var(--brand-primary)" }}>· ${b.price}/mo</span></div>
-                  <div className="dim">{b.dims} — {b.blurb}</div>
-                </div>
-                <StaticCounter n={n} />
-              </div>
-            );
-          })}
-        </div>
-
-        <span className="field-label">Common items</span>
+        <span className="field-label">Items</span>
         <div className="item-grid">
           {D.items.map((it) => {
             const n = SEL[it.id] || 0;
@@ -191,7 +171,7 @@
                 <div className="meta">
                   <div className="nm">{it.name}</div>
                   <div className="pr">${it.price}/mo</div>
-                  {it.tag && <span className="item-tag"><Icon name="circle-check" size={11} color="var(--brand-primary)" /> {it.note}</span>}
+                  {it.dims && <div className="dim" style={{ fontSize: 12, color: "var(--text-muted)" }}>{it.dims}</div>}
                 </div>
                 <StaticCounter n={n} />
               </div>
@@ -291,7 +271,7 @@
         <StepHead title="Review your booking" sub={M.reviewSub} />
         <Card padding={0} style={{ overflow: "hidden" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: 26 }}>
-            <ReviewRow icon="box" label={M.storeLabel} value={`${BOX_COUNT} boxes · ${ITEM_COUNT} items`} sub={`${SEL.medium} medium · ${SEL.large} large · mattress · mini-fridge`} />
+            <ReviewRow icon="box" label={M.storeLabel} value={`${BOX_COUNT} boxes · ${ITEM_COUNT} items`} sub={`${SEL.large_box} large boxes · mini fridge · bicycle`} />
             <ReviewRow icon="graduation-cap" label={M.whereLabel} value={ORDER.university} sub={ORDER.address} />
             <ReviewRow icon="calendar-days" label={M.whenLabel} value={`${ORDER.date} · ${ORDER.window}`} />
             {M.showPlanned && <ReviewRow icon="truck" label="Planned delivery" value={ORDER.delivery} sub="Reschedule any time from your dashboard" />}

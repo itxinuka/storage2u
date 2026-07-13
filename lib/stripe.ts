@@ -156,6 +156,7 @@ export async function createSubscriptionCheckout(
         price: item.price,
         quantity: item.quantity,
       })),
+      allow_promotion_codes: true,
       success_url: input.successUrl,
       cancel_url: input.cancelUrl,
       client_reference_id: input.bookingId,
@@ -233,11 +234,17 @@ export async function retrieveCheckoutSession(
 
   try {
     return await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["subscription"],
+      expand: ["subscription", "total_details"],
     })
   } catch {
     return null
   }
+}
+
+export function getCheckoutDiscountCents(
+  session: Stripe.Checkout.Session
+): number {
+  return session.total_details?.amount_discount ?? 0
 }
 
 export function getSubscriptionIdFromSession(
@@ -247,4 +254,74 @@ export function getSubscriptionIdFromSession(
     return session.subscription
   }
   return session.subscription?.id ?? null
+}
+
+type CreateOneTimeCheckoutInput = {
+  customerId?: string | null
+  customerEmail?: string | null
+  amountCents: number
+  productName: string
+  moveInBookingId: string
+  successUrl: string
+  cancelUrl: string
+}
+
+export async function createOneTimeCheckout(
+  input: CreateOneTimeCheckoutInput
+): Promise<string | null> {
+  const stripe = getStripe()
+  if (!stripe || input.amountCents <= 0) return null
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      ...(input.customerId
+        ? { customer: input.customerId }
+        : input.customerEmail
+          ? { customer_email: input.customerEmail }
+          : {}),
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "cad",
+            unit_amount: input.amountCents,
+            product_data: {
+              name: input.productName,
+            },
+          },
+        },
+      ],
+      allow_promotion_codes: true,
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl,
+      client_reference_id: input.moveInBookingId,
+      metadata: {
+        type: "move_in",
+        move_in_booking_id: input.moveInBookingId,
+      },
+      branding_settings: {
+        display_name: STRIPE_CHECKOUT_BRANDING.displayName,
+        background_color: STRIPE_CHECKOUT_BRANDING.backgroundColor,
+        button_color: STRIPE_CHECKOUT_BRANDING.buttonColor,
+        border_style: STRIPE_CHECKOUT_BRANDING.borderStyle,
+        logo: {
+          type: "file",
+          file: STRIPE_CHECKOUT_BRANDING.logoFileId,
+        },
+        icon: {
+          type: "file",
+          file: STRIPE_CHECKOUT_BRANDING.iconFileId,
+        },
+      },
+    })
+
+    return session.url
+  } catch (err) {
+    console.error(
+      "[stripe] one-time checkout failed:",
+      err instanceof Error ? err.message : err
+    )
+    return null
+  }
 }

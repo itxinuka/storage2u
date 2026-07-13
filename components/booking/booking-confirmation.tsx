@@ -10,7 +10,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Logo } from "@/components/logo"
 import type { BookingWithItems } from "@/lib/database.types"
-import { computeSelectionTotals } from "@/lib/booking-catalog"
+import {
+  computeSelectionTotals,
+  formatSelectionCounts,
+} from "@/lib/booking-catalog"
+import { monthlyTotalWithProtection } from "@/lib/protection-plan"
 
 function formatDisplayDate(date: string | null): string {
   if (!date) return "TBD"
@@ -21,12 +25,23 @@ function formatDisplayDate(date: string | null): string {
   })
 }
 
+function formatMoney(cents: number): string {
+  const dollars = cents / 100
+  return Number.isInteger(dollars) ? `$${dollars}` : `$${dollars.toFixed(2)}`
+}
+
 type BookingConfirmationProps = {
   booking: BookingWithItems
   mode: "pickup" | "delivery"
+  /** Discount applied on the Checkout session (cents), when available. */
+  amountDiscountCents?: number | null
 }
 
-export function BookingConfirmation({ booking, mode }: BookingConfirmationProps) {
+export function BookingConfirmation({
+  booking,
+  mode,
+  amountDiscountCents = null,
+}: BookingConfirmationProps) {
   const M =
     mode === "delivery"
       ? {
@@ -43,6 +58,13 @@ export function BookingConfirmation({ booking, mode }: BookingConfirmationProps)
     selection[item.catalog_id] = item.qty
   }
   const totals = computeSelectionTotals(selection)
+  const listTotalCents =
+    monthlyTotalWithProtection(totals.total, booking.protection_plan) * 100
+  const paidCents = booking.monthly_total_cents
+  const discountCents =
+    amountDiscountCents ??
+    (listTotalCents > paidCents ? listTotalCents - paidCents : 0)
+  const hasDiscount = discountCents > 0
 
   return (
     <div className="min-h-screen bg-background">
@@ -88,9 +110,18 @@ export function BookingConfirmation({ booking, mode }: BookingConfirmationProps)
                   </span>
                   <div>
                     <p className="font-bold text-foreground">
-                      {totals.boxCount} boxes · {totals.itemCount} items · ${totals.total}/mo
+                      {formatSelectionCounts(selection)} · {formatMoney(paidCents)}
+                      /mo
                     </p>
-                    <p className="text-sm text-muted-foreground">Free pickup & delivery</p>
+                    {hasDiscount ? (
+                      <p className="text-sm text-muted-foreground">
+                        <span className="line-through">{formatMoney(listTotalCents)}/mo</span>
+                        {" · "}
+                        {formatMoney(discountCents)} promo discount applied
+                      </p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Free pickup & delivery</p>
+                    )}
                   </div>
                 </div>
               </CardContent>

@@ -16,6 +16,7 @@ type CompletePageProps = {
 export default async function BookCompletePage({ searchParams }: CompletePageProps) {
   const params = await searchParams
   let bookingId = params.booking_id ?? null
+  let amountDiscountCents: number | null = null
 
   if (params.session_id) {
     const verified = await verifyCheckoutSession(params.session_id)
@@ -28,6 +29,7 @@ export default async function BookCompletePage({ searchParams }: CompletePagePro
       )
     }
     bookingId = verified.bookingId
+    amountDiscountCents = verified.amountDiscountCents
   }
 
   if (!bookingId) {
@@ -54,6 +56,7 @@ export default async function BookCompletePage({ searchParams }: CompletePagePro
     <BookingConfirmation
       booking={booking}
       mode={booking.mode === "delivery" ? "delivery" : "pickup"}
+      amountDiscountCents={amountDiscountCents}
     />
   )
 }

@@ -4,13 +4,18 @@ import { auth } from "@clerk/nextjs/server"
 
 import { finalizeBookingPayment } from "@/lib/stripe-booking"
 import {
+  getCheckoutDiscountCents,
   getSubscriptionIdFromSession,
   retrieveCheckoutSession,
 } from "@/lib/stripe"
 import { createServiceRoleClient } from "@/lib/supabase/service"
 
 export type VerifyCheckoutResult =
-  | { success: true; bookingId: string }
+  | {
+      success: true
+      bookingId: string
+      amountDiscountCents: number
+    }
   | { success: false; error: string }
 
 /** Verify Stripe Checkout after redirect. Must not call revalidatePath (runs during RSC render). */
@@ -68,6 +73,7 @@ export async function verifyCheckoutSession(
     bookingId,
     stripeCustomerId: customerId,
     stripeSubscriptionId: subscriptionId,
+    amountTotalCents: session.amount_total,
   })
 
   if (!finalized) {
@@ -78,7 +84,11 @@ export async function verifyCheckoutSession(
     }
   }
 
-  return { success: true, bookingId }
+  return {
+    success: true,
+    bookingId,
+    amountDiscountCents: getCheckoutDiscountCents(session),
+  }
 }
 
 export async function getBookingForConfirmation(bookingId: string) {

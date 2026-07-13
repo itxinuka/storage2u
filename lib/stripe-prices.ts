@@ -11,51 +11,61 @@ import { getStripe } from "@/lib/stripe"
  *   3. Hardcoded sandbox default (dev convenience only)
  *
  * Optional env vars (overrides):
- * - STRIPE_PRICE_SMALL, STRIPE_PRICE_MEDIUM, STRIPE_PRICE_LARGE
- * - STRIPE_PRICE_MATTRESS, STRIPE_PRICE_FRIDGE, STRIPE_PRICE_BIKE
- * - STRIPE_PRICE_SUITCASE, STRIPE_PRICE_BACKPACK, STRIPE_PRICE_MONITOR
+ * - STRIPE_PRICE_BACKPACK, STRIPE_PRICE_MIRROR, STRIPE_PRICE_LARGE_BOX
+ * - STRIPE_PRICE_CARRY_ON, STRIPE_PRICE_DUFFEL, STRIPE_PRICE_SKIS
+ * - STRIPE_PRICE_FRIDGE, STRIPE_PRICE_MONITOR, STRIPE_PRICE_CHECK_IN
+ * - STRIPE_PRICE_DESK_CHAIR, STRIPE_PRICE_BIKE
  * - STRIPE_PRICE_PROTECTION (optional Protection Plan add-on)
  */
 
 export const PROTECTION_PRICE_ENV = "STRIPE_PRICE_PROTECTION"
 
 export const CATALOG_IDS = [
-  "small",
-  "medium",
-  "large",
-  "mattress",
-  "fridge",
-  "bike",
-  "suitcase",
   "backpack",
+  "mirror",
+  "large_box",
+  "carry_on",
+  "duffel",
+  "skis",
+  "fridge",
   "monitor",
+  "check_in",
+  "desk_chair",
+  "bike",
 ] as const
 
 export type CatalogId = (typeof CATALOG_IDS)[number]
 
 const ENV_KEYS: Record<CatalogId, string> = {
-  small: "STRIPE_PRICE_SMALL",
-  medium: "STRIPE_PRICE_MEDIUM",
-  large: "STRIPE_PRICE_LARGE",
-  mattress: "STRIPE_PRICE_MATTRESS",
-  fridge: "STRIPE_PRICE_FRIDGE",
-  bike: "STRIPE_PRICE_BIKE",
-  suitcase: "STRIPE_PRICE_SUITCASE",
   backpack: "STRIPE_PRICE_BACKPACK",
+  mirror: "STRIPE_PRICE_MIRROR",
+  large_box: "STRIPE_PRICE_LARGE_BOX",
+  carry_on: "STRIPE_PRICE_CARRY_ON",
+  duffel: "STRIPE_PRICE_DUFFEL",
+  skis: "STRIPE_PRICE_SKIS",
+  fridge: "STRIPE_PRICE_FRIDGE",
   monitor: "STRIPE_PRICE_MONITOR",
+  check_in: "STRIPE_PRICE_CHECK_IN",
+  desk_chair: "STRIPE_PRICE_DESK_CHAIR",
+  bike: "STRIPE_PRICE_BIKE",
 }
 
-/** Test-mode defaults (sandbox) — override via env in production. */
+/**
+ * Test-mode defaults — updated by `scripts/sync-stripe-catalog.mjs`.
+ * Prefer lookup_key resolution or env overrides in production.
+ */
 const DEFAULT_PRICE_IDS: Record<CatalogId, string> = {
-  small: "price_1TpI8URt5Yna6OxD7C1hRaQX",
-  medium: "price_1TpI0dRt5Yna6OxDjhDUe3Iq",
-  large: "price_1TpI1FRt5Yna6OxD1j2gTenG",
-  mattress: "price_1TpI8URt5Yna6OxD4F3JWYM5",
-  fridge: "price_1TpI8VRt5Yna6OxDhaLeAlKP",
-  bike: "price_1TpI8VRt5Yna6OxDBbhldQHd",
-  suitcase: "price_1TpI8YRt5Yna6OxDk5I7t4Ji",
-  backpack: "price_1TpI8YRt5Yna6OxD18pjwJnd",
-  monitor: "price_1TpI8YRt5Yna6OxDAkQ1Drfp",
+  backpack: "price_1TsXctRt5Yna6OxDxAjUzsA9",
+  mirror: "price_1TsXcuRt5Yna6OxDOBrVv1Yt",
+  large_box: "price_1TsXcvRt5Yna6OxDHhfjjKd5",
+  carry_on: "price_1TsXcwRt5Yna6OxD1hXvuzm2",
+  duffel: "price_1TsXcxRt5Yna6OxDEWzJ3sgi",
+  skis: "price_1TsXcyRt5Yna6OxDgHH8yXuN",
+  fridge: "price_1TsXczRt5Yna6OxDibfzSFx0",
+  monitor: "price_1TsXd0Rt5Yna6OxDozqIWnnV",
+  check_in: "price_1TsXd1Rt5Yna6OxDwvWetSAj",
+  desk_chair: "price_1TsXd2Rt5Yna6OxDOWDEtwdX",
+  bike: "price_1TsXd3Rt5Yna6OxDzT5iocRU",
 }
 
 /** Cache of catalog id -> resolved Stripe price id for the process lifetime. */
@@ -99,7 +109,8 @@ async function resolvePriceId(catalogId: CatalogId): Promise<string | null> {
     return resolvedPriceCache.get(catalogId) ?? null
   }
 
-  return DEFAULT_PRICE_IDS[catalogId] ?? null
+  const fallback = DEFAULT_PRICE_IDS[catalogId]
+  return fallback || null
 }
 
 export async function getStripePriceId(

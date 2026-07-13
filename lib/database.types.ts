@@ -248,6 +248,125 @@ export type Database = {
           },
         ]
       }
+      move_in_bookings: {
+        Row: {
+          base_fee_cents: number
+          campus_id: string
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          distance_charge_cents: number
+          distance_km: number
+          home_address: Json
+          id: string
+          item_charge: number
+          item_count: number
+          items: Json
+          move_in_date: string
+          profile_id: string | null
+          status: Database["public"]["Enums"]["move_in_booking_status"]
+          stripe_session_id: string | null
+          total_cents: number
+          university_id: string
+          updated_at: string
+        }
+        Insert: {
+          base_fee_cents: number
+          campus_id: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          distance_charge_cents: number
+          distance_km: number
+          home_address: Json
+          id?: string
+          item_charge?: number
+          item_count?: number
+          items?: Json
+          move_in_date: string
+          profile_id?: string | null
+          status?: Database["public"]["Enums"]["move_in_booking_status"]
+          stripe_session_id?: string | null
+          total_cents: number
+          university_id: string
+          updated_at?: string
+        }
+        Update: {
+          base_fee_cents?: number
+          campus_id?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          distance_charge_cents?: number
+          distance_km?: number
+          home_address?: Json
+          id?: string
+          item_charge?: number
+          item_count?: number
+          items?: Json
+          move_in_date?: string
+          profile_id?: string | null
+          status?: Database["public"]["Enums"]["move_in_booking_status"]
+          stripe_session_id?: string | null
+          total_cents?: number
+          university_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "move_in_bookings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      move_in_quote_requests: {
+        Row: {
+          campus_id: string
+          created_at: string
+          distance_km: number | null
+          email: string
+          home_address: Json
+          id: string
+          items: Json
+          move_in_date: string
+          name: string
+          phone: string
+          university_id: string
+        }
+        Insert: {
+          campus_id: string
+          created_at?: string
+          distance_km?: number | null
+          email: string
+          home_address: Json
+          id?: string
+          items?: Json
+          move_in_date: string
+          name: string
+          phone: string
+          university_id: string
+        }
+        Update: {
+          campus_id?: string
+          created_at?: string
+          distance_km?: number | null
+          email?: string
+          home_address?: Json
+          id?: string
+          items?: Json
+          move_in_date?: string
+          name?: string
+          phone?: string
+          university_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           clerk_user_id: string
@@ -548,6 +667,7 @@ export type Database = {
         | "in_transit"
         | "delivered"
         | "cancelled"
+      move_in_booking_status: "pending_payment" | "confirmed" | "cancelled"
       dispatch_status: "scheduled" | "out" | "done"
       shift_assignment_status: "available" | "loading" | "on_route"
       staff_role: "driver" | "mover" | "dispatcher"
@@ -559,3 +679,6 @@ export type Database = {
 export type Booking = Database["public"]["Tables"]["bookings"]["Row"]
 export type BookingItem = Database["public"]["Tables"]["booking_items"]["Row"]
 export type BookingWithItems = Booking & { booking_items: BookingItem[] }
+export type MoveInBooking = Database["public"]["Tables"]["move_in_bookings"]["Row"]
+export type MoveInQuoteRequest =
+  Database["public"]["Tables"]["move_in_quote_requests"]["Row"]

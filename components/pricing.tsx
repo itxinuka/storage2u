@@ -1,13 +1,12 @@
 import Link from "next/link"
-import { Check, Zap } from "lucide-react"
+import { Check } from "lucide-react"
 
+import { ItemIcon } from "@/components/booking/item-icon"
 import { SectionHeader } from "@/components/section-header"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { protectionCopy } from "@/lib/protection-plan"
 import { siteContent } from "@/lib/site-content"
-import { cn } from "@/lib/utils"
 
 export function Pricing() {
   return (
@@ -16,95 +15,50 @@ export function Pricing() {
         <SectionHeader
           center
           eyebrow="Transparent pricing"
-          title="Pay per box, billed monthly"
+          title="Pay per item, billed monthly"
           description="Free pickup and delivery on campus. Only pay for what you actually store — no deposits, no setup fees."
         />
 
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {siteContent.boxes.map((box) => (
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {siteContent.items.map((item) => (
             <Card
-              key={box.id}
-              className={cn(
-                "relative gap-0 overflow-hidden rounded-3xl border-0 py-0 shadow-brand",
-                box.popular && "bg-primary text-primary-foreground shadow-brand-lg"
-              )}
+              key={item.id}
+              className="gap-0 overflow-hidden rounded-3xl border-0 py-0 shadow-brand"
             >
-              {box.popular ? (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="gap-1 rounded-full bg-accent px-3 py-1 text-accent-foreground shadow">
-                    <Zap className="h-3 w-3" />
-                    Most popular
-                  </Badge>
-                </div>
-              ) : null}
-
-              <CardContent className="flex flex-col gap-5 p-8 pt-10">
-                <div>
-                  <p
-                    className={cn(
-                      "text-xs font-bold uppercase tracking-[0.08em]",
-                      box.popular ? "text-primary-foreground/70" : "text-muted-foreground"
-                    )}
-                  >
-                    {box.name}
-                  </p>
-                  <div className="mt-3 flex items-baseline gap-1">
-                    <span className="text-5xl font-extrabold tracking-tight">
-                      ${box.price}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-sm",
-                        box.popular ? "text-primary-foreground/65" : "text-muted-foreground"
-                      )}
-                    >
-                      /box per month
-                    </span>
+              <CardContent className="flex flex-col gap-4 p-6">
+                <div className="flex items-start gap-3">
+                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-soft">
+                    <ItemIcon name={item.icon} size={20} className="text-primary" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-foreground">{item.name}</p>
+                    {"dims" in item && item.dims ? (
+                      <p className="text-xs text-muted-foreground">{item.dims}</p>
+                    ) : null}
                   </div>
-                  <p
-                    className={cn(
-                      "mt-2 text-sm",
-                      box.popular ? "text-primary-foreground/75" : "text-muted-foreground"
-                    )}
-                  >
-                    {box.dims}
-                  </p>
                 </div>
 
-                <p
-                  className={cn(
-                    "text-sm leading-relaxed",
-                    box.popular ? "text-primary-foreground/80" : "text-muted-foreground"
-                  )}
-                >
-                  {box.blurb}
-                </p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-extrabold tracking-tight text-foreground">
+                    ${item.price}
+                  </span>
+                  <span className="text-sm text-muted-foreground">/mo</span>
+                </div>
 
-                <ul className="space-y-2.5">
-                  {["Free campus pickup", "Free delivery back", "Climate-controlled storage"].map(
-                    (feature) => (
-                      <li key={feature} className="flex items-center gap-2.5 text-sm">
-                        <span
-                          className={cn(
-                            "inline-flex h-5 w-5 items-center justify-center rounded-full",
-                            box.popular ? "bg-accent text-accent-foreground" : "bg-purple-soft text-primary"
-                          )}
-                        >
-                          <Check className="h-3 w-3" />
-                        </span>
-                        {feature}
-                      </li>
-                    )
-                  )}
+                <ul className="space-y-2">
+                  {["Free campus pickup", "Free delivery back"].map((feature) => (
+                    <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-purple-soft text-primary">
+                        <Check className="h-3 w-3" />
+                      </span>
+                      {feature}
+                    </li>
+                  ))}
                 </ul>
               </CardContent>
 
-              <CardFooter className="border-0 bg-transparent p-8 pt-0">
-                <Button
-                  className="w-full"
-                  variant={box.popular ? "secondary" : "default"}
-                  render={<Link href="/book" />}
-                >
+              <CardFooter className="border-0 bg-transparent p-6 pt-0">
+                <Button className="w-full" render={<Link href="/book" />}>
                   Book a pickup
                 </Button>
               </CardFooter>

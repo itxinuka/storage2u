@@ -10,42 +10,31 @@ window.S2U = {
     ],
   },
 
-  // Per-box, billed monthly. Free pickup + delivery on campus.
-  boxes: [
-    {
-      id: "small",
-      name: "Small box",
-      price: 7,
-      dims: '18" × 18" × 16"',
-      blurb: "Books, clothes, kitchen bits — the everyday stuff.",
-      popular: false,
-    },
-    {
-      id: "medium",
-      name: "Medium box",
-      price: 9,
-      dims: '18" × 18" × 24"',
-      blurb: "The classic moving box. Most students live here.",
-      popular: true,
-    },
-    {
-      id: "large",
-      name: "Large box",
-      price: 13,
-      dims: '24" × 24" × 24"',
-      blurb: "Bedding, lamps, and the bulkier end-of-term gear.",
-      popular: false,
-    },
+  // Per-item, billed monthly. Free pickup + delivery on campus.
+  items: [
+    { id: "backpack", name: "Backpack", price: 5, icon: "backpack" },
+    { id: "mirror", name: "Full Length Mirror", price: 10, icon: "mirror" },
+    { id: "large_box", name: "Large Box", price: 20, icon: "box", dims: '18" × 18" × 16"' },
+    { id: "carry_on", name: "Carry-On Suitcase", price: 20, icon: "suitcase" },
+    { id: "duffel", name: "Duffel Bag", price: 20, icon: "duffel" },
+    { id: "skis", name: "Skis / Snowboard", price: 25, icon: "skis" },
+    { id: "fridge", name: "Mini Fridge", price: 25, icon: "fridge" },
+    { id: "monitor", name: "Monitor / TV (boxed)", price: 25, icon: "monitor" },
+    { id: "check_in", name: "Check-In Suitcase", price: 30, icon: "suitcase" },
+    { id: "desk_chair", name: "Desk Chair", price: 30, icon: "desk_chair" },
+    { id: "bike", name: "Bicycle", price: 40, icon: "bike" },
   ],
 
-  // Oversized / common student items — flat monthly each. Shown in the booking catalog.
-  items: [
-    { id: "mattress", name: "Mattress", price: 20, icon: "mattress", note: "Sealed & wrapped free", tag: true },
-    { id: "fridge", name: "Mini-fridge", price: 18, icon: "fridge" },
-    { id: "bike", name: "Bicycle", price: 15, icon: "bike" },
-    { id: "suitcase", name: "Suitcase", price: 9, icon: "suitcase" },
-    { id: "backpack", name: "Backpack", price: 5, icon: "backpack" },
-    { id: "monitor", name: "TV / Monitor", price: 16, icon: "monitor" },
+  // Legacy alias — marketing pages that still read boxes.
+  boxes: [
+    {
+      id: "large_box",
+      name: "Large Box",
+      price: 20,
+      dims: '18" × 18" × 16"',
+      blurb: "Books, clothes, kitchen bits — the everyday stuff.",
+      popular: true,
+    },
   ],
 
   steps: [
@@ -127,7 +116,7 @@ window.S2U = {
     { id: "summer-checklist", cat: "Moving out", read: "6 min", title: "The end-of-term move-out checklist every student needs", excerpt: "Exams are done, your lease is up, and your room looks like a tornado hit it. Here's how to pack, store, and bounce in a single afternoon.", date: "Jun 12, 2026", tone: "purple", feature: true },
     { id: "pack-like-pro", cat: "Packing tips", read: "4 min", title: "How to pack a box so nothing breaks in storage", excerpt: "Heavy on the bottom, fragile in the middle, label every side. The five rules that keep your mugs in one piece.", date: "Jun 3, 2026", tone: "lime" },
     { id: "dorm-vs-apartment", cat: "Campus life", read: "5 min", title: "Dorm or off-campus? What changes for your storage", excerpt: "Residence move-out dates, summer subleases, and why per-box storage beats a locker for both.", date: "May 21, 2026", tone: "soft" },
-    { id: "mattress-storage", cat: "Big items", read: "3 min", title: "Yes, we'll store your mattress — here's how we keep it fresh", excerpt: "Sealed, wrapped, and stood upright in a climate-controlled bay. What happens to the bulky stuff.", date: "May 9, 2026", tone: "purple" },
+    { id: "big-item-storage", cat: "Big items", read: "3 min", title: "Bikes, fridges, and skis — how we store the bulky stuff", excerpt: "Climate-controlled bays, careful wrapping, and catalogued photos. What happens to oversized gear.", date: "May 9, 2026", tone: "purple" },
     { id: "moving-day-hacks", cat: "Moving out", read: "4 min", title: "7 move-in day hacks for a stress-free arrival", excerpt: "Book your delivery for the morning, unpack the essentials box first, and recycle as you go.", date: "Apr 28, 2026", tone: "lime" },
     { id: "what-to-store", cat: "Packing tips", read: "5 min", title: "What's actually worth storing over the summer", excerpt: "Winter coats, textbooks, and the mini-fridge: yes. That broken desk lamp: maybe let it go.", date: "Apr 15, 2026", tone: "soft" },
   ],

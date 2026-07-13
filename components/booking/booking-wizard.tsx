@@ -12,14 +12,13 @@ import {
   ChevronRight,
   GraduationCap,
   Minus,
-  Package,
   Plus,
   ShieldCheck,
   Sparkles,
   Truck,
   User,
 } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 
 import { createBooking, createCheckoutSession } from "@/app/book/actions"
@@ -38,6 +37,7 @@ import {
   RESIDENCES,
   TIME_WINDOWS,
   computeSelectionTotals,
+  formatSelectionCounts,
   type BookingMode,
   type SelectionMap,
 } from "@/lib/booking-catalog"
@@ -61,8 +61,8 @@ import { siteContent } from "@/lib/site-content"
 import { cn } from "@/lib/utils"
 
 type BookingWizardProps = {
-  initialMode?: BookingMode
   bookingBlocks?: BookingBlock[]
+  modeToggle?: ReactNode
 }
 
 type FormState = {
@@ -83,7 +83,6 @@ const defaultSelection: SelectionMap = { medium: 0, large: 0 }
 const BOOKING_DRAFT_KEY = "s2u-booking-draft"
 
 type BookingDraft = {
-  mode: BookingMode
   step: number
   form: FormState
 }
@@ -103,23 +102,21 @@ function defaultFormState(): FormState {
   }
 }
 
-function createDefaultDraft(initialMode: BookingMode): BookingDraft {
+function createDefaultDraft(): BookingDraft {
   return {
-    mode: initialMode,
     step: 0,
     form: defaultFormState(),
   }
 }
 
-function readStoredBookingDraft(initialMode: BookingMode): BookingDraft {
-  const fallback = createDefaultDraft(initialMode)
+function readStoredBookingDraft(): BookingDraft {
+  const fallback = createDefaultDraft()
   if (typeof window === "undefined") return fallback
   try {
     const raw = sessionStorage.getItem(BOOKING_DRAFT_KEY)
     if (!raw) return fallback
     const draft = JSON.parse(raw) as BookingDraft
     return {
-      mode: draft.mode === "delivery" ? "delivery" : "pickup",
       step: Math.min(Math.max(Number(draft.step) || 0, 0), 3),
       form: { ...defaultFormState(), ...draft.form, selection: draft.form?.selection ?? defaultSelection },
     }
@@ -285,55 +282,17 @@ function ScheduleCalendar({
   )
 }
 
-function ModeToggle({
-  mode,
-  onChange,
-}: {
-  mode: BookingMode
-  onChange: (mode: BookingMode) => void
-}) {
-  const opts: { id: BookingMode; label: string; icon: typeof Package }[] = [
-    { id: "pickup", label: "Store my stuff", icon: Package },
-    { id: "delivery", label: "University move-in", icon: GraduationCap },
-  ]
-
-  return (
-    <div className="mb-6 inline-flex max-w-full gap-1 rounded-full bg-muted p-1">
-      {opts.map(({ id, label, icon: Icon }) => {
-        const on = mode === id
-        return (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onChange(id)}
-            className={cn(
-              "flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-bold transition-all",
-              on
-                ? "bg-card text-primary shadow-brand"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {label}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 function OrderSummary({
-  mode,
   selection,
   protectionPlan,
 }: {
-  mode: BookingMode
   selection: SelectionMap
   protectionPlan: boolean
 }) {
-  const M = BOOKING_MODES[mode]
-  const { total, boxCount, itemCount } = computeSelectionTotals(selection)
+  const M = BOOKING_MODES.pickup
+  const { total } = computeSelectionTotals(selection)
   const monthlyTotal = monthlyTotalWithProtection(total, protectionPlan)
+  const countsLabel = formatSelectionCounts(selection)
 
   return (
     <aside className="space-y-3 self-start lg:sticky lg:top-24">
@@ -367,9 +326,7 @@ function OrderSummary({
           </div>
           <div className="h-px bg-border" />
           <div className="flex items-baseline justify-between">
-            <span className="text-sm text-muted-foreground">
-              {boxCount} boxes · {itemCount} items
-            </span>
+            <span className="text-sm text-muted-foreground">{countsLabel}</span>
             <span className="text-2xl font-extrabold text-foreground">
               ${monthlyTotal}
               <span className="text-sm font-medium text-muted-foreground">/mo</span>
@@ -398,7 +355,7 @@ function MobilePriceBar({
   selection: SelectionMap
   protectionPlan: boolean
 }) {
-  const { total, boxCount, itemCount } = computeSelectionTotals(selection)
+  const { total } = computeSelectionTotals(selection)
   const monthlyTotal = monthlyTotalWithProtection(total, protectionPlan)
 
   return (
@@ -414,7 +371,7 @@ function MobilePriceBar({
           </p>
         </div>
         <p className="text-sm text-muted-foreground">
-          {boxCount} boxes · {itemCount} items
+          {formatSelectionCounts(selection)}
         </p>
       </div>
     </div>
@@ -431,16 +388,16 @@ function formatDisplayDate(iso: string) {
 }
 
 export function BookingWizard({
-  initialMode = "pickup",
   bookingBlocks = [],
+  modeToggle = null,
 }: BookingWizardProps) {
   const { isSignedIn } = useAuth()
   const { user } = useUser()
   const { openSignIn } = useClerk()
   const searchParams = useSearchParams()
 
-  const defaultDraft = useMemo(() => createDefaultDraft(initialMode), [initialMode])
-  const [mode, setMode] = useState<BookingMode>(defaultDraft.mode)
+  const defaultDraft = useMemo(() => createDefaultDraft(), [])
+  const mode: BookingMode = "pickup"
   const [step, setStep] = useState(defaultDraft.step)
 
   const [done, setDone] = useState(false)
@@ -477,7 +434,7 @@ export function BookingWizard({
         phone: form.phone,
         scheduledDate: form.scheduledDate,
         timeWindow: form.timeWindow,
-        deliveryDate: mode === "pickup" ? form.deliveryDate || null : null,
+        deliveryDate: form.deliveryDate || null,
         notes: null,
         protectionPlan: form.protectionPlan,
       })
@@ -530,12 +487,11 @@ export function BookingWizard({
   }, [searchParams])
 
   useEffect(() => {
-    const stored = readStoredBookingDraft(initialMode)
-    setMode(stored.mode)
+    const stored = readStoredBookingDraft()
     setStep(stored.step)
     setForm(stored.form)
     setDraftHydrated(true)
-  }, [initialMode])
+  }, [])
 
   useEffect(() => {
     if (pendingSubmit && isSignedIn) {
@@ -554,9 +510,9 @@ export function BookingWizard({
     if (!draftHydrated || done) return
     sessionStorage.setItem(
       BOOKING_DRAFT_KEY,
-      JSON.stringify({ mode, step, form } satisfies BookingDraft)
+      JSON.stringify({ step, form } satisfies BookingDraft)
     )
-  }, [draftHydrated, mode, step, form, done])
+  }, [draftHydrated, step, form, done])
 
   useEffect(() => {
     if (!isSignedIn || !user) return
@@ -693,7 +649,7 @@ export function BookingWizard({
                     </span>
                     <div>
                       <p className="font-bold text-foreground">
-                        {totals.boxCount} boxes · {totals.itemCount} items · ${totals.total}/mo
+                        {formatSelectionCounts(form.selection)} · ${totals.total}/mo
                       </p>
                       <p className="text-sm text-muted-foreground">Free pickup & delivery</p>
                     </div>
@@ -730,7 +686,7 @@ export function BookingWizard({
       </header>
 
       <main className="mx-auto max-w-[1180px] px-6 py-8 pb-32 lg:pb-20">
-        {step === 0 ? <ModeToggle mode={mode} onChange={setMode} /> : null}
+        {step === 0 ? modeToggle : null}
         <div className="mb-8">
           <StepIndicator steps={steps} current={step + 1} />
         </div>
@@ -761,10 +717,13 @@ export function BookingWizard({
                           <div className="min-w-0 flex-1">
                             <p className="font-bold text-foreground">
                               {box.name}{" "}
-                              <span className="font-semibold text-primary">· ${box.price}/mo</span>
+                              <span className="font-semibold text-primary">
+                                · ${box.price}/mo
+                              </span>
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {box.dims} — {box.blurb}
+                              {box.dims}
+                              {box.blurb ? ` — ${box.blurb}` : ""}
                             </p>
                           </div>
                           <Counter value={n} onChange={(v) => updateSelection(box.id, v)} />
@@ -788,14 +747,17 @@ export function BookingWizard({
                         >
                           <div className="flex flex-1 items-start gap-3">
                             <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-purple-soft">
-                              <ItemIcon name={item.icon} size={20} className="text-primary" />
+                              <ItemIcon
+                                name={item.icon ?? "box"}
+                                size={20}
+                                className="text-primary"
+                              />
                             </span>
                             <div>
                               <p className="font-bold text-foreground">{item.name}</p>
-                              <p className="text-sm font-semibold text-primary">${item.price}/mo</p>
-                              {"tag" in item && item.tag ? (
-                                <p className="mt-1 text-xs text-muted-foreground">{item.note}</p>
-                              ) : null}
+                              <p className="text-sm font-semibold text-primary">
+                                ${item.price}/mo
+                              </p>
                             </div>
                           </div>
                           <Counter value={n} onChange={(v) => updateSelection(item.id, v)} />
@@ -981,7 +943,7 @@ export function BookingWizard({
                       <ReviewRow
                         icon={Box}
                         label={M.storeLabel}
-                        value={`${totals.boxCount} boxes · ${totals.itemCount} items`}
+                        value={formatSelectionCounts(form.selection)}
                         sub={selectionSummary}
                       />
                       <ReviewRow
@@ -1115,7 +1077,6 @@ export function BookingWizard({
           </Card>
 
           <OrderSummary
-            mode={mode}
             selection={form.selection}
             protectionPlan={form.protectionPlan}
           />

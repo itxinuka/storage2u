@@ -35,6 +35,21 @@ export async function POST(request: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session
+
+        if (session.metadata?.type === "move_in") {
+          const moveInBookingId =
+            session.metadata.move_in_booking_id ?? session.client_reference_id ?? null
+
+          if (moveInBookingId) {
+            const { finalizeMoveInPayment } = await import("@/lib/stripe-move-in-booking")
+            await finalizeMoveInPayment({
+              moveInBookingId,
+              stripeSessionId: session.id,
+            })
+          }
+          break
+        }
+
         const bookingId =
           session.metadata?.booking_id ?? session.client_reference_id ?? null
         const subscriptionId = getSubscriptionIdFromSession(session)
@@ -48,6 +63,7 @@ export async function POST(request: Request) {
             bookingId,
             stripeCustomerId: customerId,
             stripeSubscriptionId: subscriptionId,
+            amountTotalCents: session.amount_total,
           })
         }
         break

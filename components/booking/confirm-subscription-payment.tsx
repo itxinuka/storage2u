@@ -10,7 +10,7 @@ import { confirmSubscriptionBooking } from "@/app/book/actions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Logo } from "@/components/logo"
-import { computeSelectionTotals } from "@/lib/booking-catalog"
+import { computeSelectionTotals, formatSelectionCounts } from "@/lib/booking-catalog"
 import type { BookingWithItems } from "@/lib/database.types"
 import { monthlyTotalWithProtection } from "@/lib/protection-plan"
 
@@ -112,7 +112,7 @@ export function ConfirmSubscriptionPayment({
                   </span>
                   <div>
                     <p className="font-bold text-foreground">
-                      {totals.boxCount} boxes · {totals.itemCount} items
+                      {formatSelectionCounts(selection)}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       ${monthlyTotal}/mo added to your subscription

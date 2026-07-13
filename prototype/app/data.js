@@ -10,42 +10,30 @@ window.S2U = {
     ],
   },
 
-  // Per-box, billed monthly. Free pickup + delivery on campus.
+  // Per-item, billed monthly. Free pickup + delivery on campus.
   boxes: [
     {
-      id: "small",
-      name: "Small box",
-      price: 7,
+      id: "large_box",
+      name: "Large Box",
+      price: 20,
       dims: '18" × 18" × 16"',
       blurb: "Books, clothes, kitchen bits — the everyday stuff.",
-      popular: false,
-    },
-    {
-      id: "medium",
-      name: "Medium box",
-      price: 9,
-      dims: '18" × 18" × 24"',
-      blurb: "The classic moving box. Most students live here.",
       popular: true,
-    },
-    {
-      id: "large",
-      name: "Large box",
-      price: 13,
-      dims: '24" × 24" × 24"',
-      blurb: "Bedding, lamps, and the bulkier end-of-term gear.",
-      popular: false,
     },
   ],
 
-  // Oversized / common student items — flat monthly each. Shown in the booking catalog.
   items: [
-    { id: "mattress", name: "Mattress", price: 20, icon: "mattress", note: "Sealed & wrapped free", tag: true },
-    { id: "fridge", name: "Mini-fridge", price: 18, icon: "fridge" },
-    { id: "bike", name: "Bicycle", price: 15, icon: "bike" },
-    { id: "suitcase", name: "Suitcase", price: 9, icon: "suitcase" },
     { id: "backpack", name: "Backpack", price: 5, icon: "backpack" },
-    { id: "monitor", name: "TV / Monitor", price: 16, icon: "monitor" },
+    { id: "mirror", name: "Full Length Mirror", price: 10, icon: "mirror" },
+    { id: "large_box", name: "Large Box", price: 20, icon: "box", dims: '18" × 18" × 16"' },
+    { id: "carry_on", name: "Carry-On Suitcase", price: 20, icon: "suitcase" },
+    { id: "duffel", name: "Duffel Bag", price: 20, icon: "duffel" },
+    { id: "skis", name: "Skis / Snowboard", price: 25, icon: "skis" },
+    { id: "fridge", name: "Mini Fridge", price: 25, icon: "fridge" },
+    { id: "monitor", name: "Monitor / TV (boxed)", price: 25, icon: "monitor" },
+    { id: "check_in", name: "Check-In Suitcase", price: 30, icon: "suitcase" },
+    { id: "desk_chair", name: "Desk Chair", price: 30, icon: "desk_chair" },
+    { id: "bike", name: "Bicycle", price: 40, icon: "bike" },
   ],
 
   steps: [
@@ -248,12 +236,12 @@ window.S2U = {
     shift: "8:00 AM – 4:00 PM",
     day: { stops: 6, done: 2, boxes: 38, miles: "31 km", hours: "5.5 hrs" },
     stops: [
-      { id: "s1", type: "pickup", status: "done", customer: "Priya Sharma", uni: "UBC", address: "2055 Lower Mall, Totem Park", room: "Rm 314", window: "8:00 – 8:30 AM", eta: "8:12 AM", dist: "—", boxes: 6, items: ["Mattress", "Mini-fridge"], phone: "(604) 555-0112", notes: "Buzz #314. Elevator on the north side." },
+      { id: "s1", type: "pickup", status: "done", customer: "Priya Sharma", uni: "UBC", address: "2055 Lower Mall, Totem Park", room: "Rm 314", window: "8:00 – 8:30 AM", eta: "8:12 AM", dist: "—", boxes: 6, items: ["Mini Fridge", "Bicycle"], phone: "(604) 555-0112", notes: "Buzz #314. Elevator on the north side." },
       { id: "s2", type: "pickup", status: "done", customer: "Liam O'Brien", uni: "UBC", address: "5959 Student Union Blvd", room: "Apt 7B", window: "8:45 – 9:15 AM", eta: "9:02 AM", dist: "—", boxes: 4, items: ["Bicycle"], phone: "(604) 555-0143", notes: "Bike is in the storage locker, level P1." },
       { id: "s3", type: "delivery", status: "current", customer: "Aisha Mohammed", uni: "UBC", address: "6133 University Blvd, Walter Gage", room: "Tower 2, Rm 1108", window: "9:30 – 10:00 AM", eta: "9:41 AM", dist: "1.2 km", boxes: 8, items: ["TV / Monitor", "Desk chair"], phone: "(604) 555-0178", notes: "Customer requested morning delivery. Call on arrival." },
       { id: "s4", type: "pickup", status: "upcoming", customer: "Noah Williams", uni: "UBC", address: "2750 Acadia Rd", room: "Unit 12", window: "10:30 – 11:00 AM", eta: "10:38 AM", dist: "2.4 km", boxes: 5, items: ["Suitcase", "Backpack"], phone: "(604) 555-0190", notes: "Leave boxes with roommate if not home." },
       { id: "s5", type: "pickup", status: "upcoming", customer: "Sofia Rossi", uni: "UBC", address: "3335 Wesbrook Mall", room: "Rm 502", window: "11:15 – 11:45 AM", eta: "11:22 AM", dist: "1.1 km", boxes: 7, items: ["Mini-fridge"], phone: "(604) 555-0166", notes: "" },
-      { id: "s6", type: "delivery", status: "upcoming", customer: "Ethan Tremblay", uni: "UBC", address: "6393 NW Marine Dr", room: "Rm 208", window: "12:30 – 1:00 PM", eta: "12:41 PM", dist: "3.0 km", boxes: 8, items: ["Mattress"], phone: "(604) 555-0155", notes: "Mattress delivery — confirm room is clear." },
+      { id: "s6", type: "delivery", status: "upcoming", customer: "Ethan Tremblay", uni: "UBC", address: "6393 NW Marine Dr", room: "Rm 208", window: "12:30 – 1:00 PM", eta: "12:41 PM", dist: "3.0 km", boxes: 8, items: ["Desk Chair"], phone: "(604) 555-0155", notes: "Chair delivery — confirm room is clear." },
     ],
   },
 
@@ -262,7 +250,7 @@ window.S2U = {
     { id: "summer-checklist", cat: "Moving out", read: "6 min", title: "The end-of-term move-out checklist every student needs", excerpt: "Exams are done, your lease is up, and your room looks like a tornado hit it. Here's how to pack, store, and bounce in a single afternoon.", date: "Jun 12, 2026", tone: "purple", feature: true },
     { id: "pack-like-pro", cat: "Packing tips", read: "4 min", title: "How to pack a box so nothing breaks in storage", excerpt: "Heavy on the bottom, fragile in the middle, label every side. The five rules that keep your mugs in one piece.", date: "Jun 3, 2026", tone: "lime" },
     { id: "dorm-vs-apartment", cat: "Campus life", read: "5 min", title: "Dorm or off-campus? What changes for your storage", excerpt: "Residence move-out dates, summer subleases, and why per-box storage beats a locker for both.", date: "May 21, 2026", tone: "soft" },
-    { id: "mattress-storage", cat: "Big items", read: "3 min", title: "Yes, we'll store your mattress — here's how we keep it fresh", excerpt: "Sealed, wrapped, and stood upright in a climate-controlled bay. What happens to the bulky stuff.", date: "May 9, 2026", tone: "purple" },
+    { id: "big-item-storage", cat: "Big items", read: "3 min", title: "Bikes, fridges, and skis — how we store the bulky stuff", excerpt: "Climate-controlled bays, careful wrapping, and catalogued photos. What happens to oversized gear.", date: "May 9, 2026", tone: "purple" },
     { id: "moving-day-hacks", cat: "Moving out", read: "4 min", title: "7 move-in day hacks for a stress-free arrival", excerpt: "Book your delivery for the morning, unpack the essentials box first, and recycle as you go.", date: "Apr 28, 2026", tone: "lime" },
     { id: "what-to-store", cat: "Packing tips", read: "5 min", title: "What's actually worth storing over the summer", excerpt: "Winter coats, textbooks, and the mini-fridge: yes. That broken desk lamp: maybe let it go.", date: "Apr 15, 2026", tone: "soft" },
   ],
@@ -306,7 +294,7 @@ window.S2U.opsHelpers = {
     const medium = o.boxes - large;
     if (medium > 0) out.push({ label: "Medium box", icon: "box", qty: medium, unit: 9 });
     if (large > 0) out.push({ label: "Large box", icon: "box", qty: large, unit: 13 });
-    const itemPool = [["Mattress", 20], ["Mini-fridge", 18], ["Bicycle", 15]];
+    const itemPool = [["Mini Fridge", 25], ["Bicycle", 40], ["Backpack", 5]];
     for (let i = 0; i < o.items; i++) {
       const [label, unit] = itemPool[i % itemPool.length];
       out.push({ label, icon: "package", qty: 1, unit });

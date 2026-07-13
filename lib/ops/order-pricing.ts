@@ -7,16 +7,13 @@ import {
 } from "@/lib/booking-catalog"
 import type { OpsOrderLineItem } from "@/lib/ops/orders-types"
 
-const OPS_ITEM_POOL = ["mattress", "fridge", "bike"] as const
+const OPS_ITEM_POOL = ["fridge", "bike", "backpack"] as const
 
-/** Map ops box/item counts to catalog selection (matches prototype opsHelpers.lines). */
+/** Map ops box/item counts to catalog selection. */
 export function countsToSelection(boxes: number, items: number): SelectionMap {
-  const large = Math.floor(boxes / 4)
-  const medium = boxes - large
   const selection: SelectionMap = {}
 
-  if (medium > 0) selection.medium = medium
-  if (large > 0) selection.large = large
+  if (boxes > 0) selection.large_box = boxes
 
   const itemCounts: Record<string, number> = {}
   for (let i = 0; i < items; i += 1) {

@@ -131,3 +131,13 @@
 {"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783877590115}
 {"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783877590369}
 {"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783877590552}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"entry","data":{"mode":"pickup"},"hypothesisId":"A","timestamp":1783902672490}
+{"sessionId":"106bf1","location":"actions.ts:createBooking","message":"success","data":{"bookingId":"d4eb3c19-9382-4e86-8879-37bdd48683a4"},"hypothesisId":"A","timestamp":1783902674417}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"entry","data":{"bookingId":"d4eb3c19-9382-4e86-8879-37bdd48683a4"},"hypothesisId":"B","timestamp":1783902674484}
+{"sessionId":"106bf1","location":"actions.ts:createCheckoutSession","message":"resolved origin","data":{"origin":"http://localhost:3000","lineItemCount":1},"hypothesisId":"E","timestamp":1783902675431}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783942230620}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783942237280}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783942242340}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783942250329}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783942254376}
+{"sessionId":"106bf1","location":"server.ts:createClient","message":"token resolved","data":{"hasToken":true},"hypothesisId":"C","timestamp":1783942258527}

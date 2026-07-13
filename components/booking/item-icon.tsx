@@ -1,21 +1,18 @@
 type ItemIconName =
-  | "mattress"
   | "fridge"
   | "bike"
   | "suitcase"
   | "backpack"
   | "monitor"
   | "box"
+  | "mirror"
+  | "duffel"
+  | "skis"
+  | "desk_chair"
 
 type PathEntry = string | { c: [number, number, number] }
 
 const ITEM_PATHS: Record<ItemIconName, PathEntry[]> = {
-  mattress: [
-    "M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8",
-    "M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4",
-    "M12 4v6",
-    "M2 18h20",
-  ],
   fridge: [
     "M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z",
     "M5 10h14",
@@ -49,6 +46,33 @@ const ITEM_PATHS: Record<ItemIconName, PathEntry[]> = {
     "M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z",
     "m3.3 7 8.7 5 8.7-5",
     "M12 22V12",
+  ],
+  mirror: [
+    "M5 3h14a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z",
+    "M8 21h8",
+    "M9 7h6v8H9z",
+  ],
+  duffel: [
+    "M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z",
+    "M8 10V8a4 4 0 0 1 8 0v2",
+    "M4 14h16",
+  ],
+  skis: [
+    "M6 3v18",
+    "M10 3v18",
+    "M4 7h4",
+    "M8 11h4",
+    "M14 3l6 18",
+    "M18 9h-3",
+  ],
+  desk_chair: [
+    "M8 4h8v6H8z",
+    "M6 10h12",
+    "M9 10v6",
+    "M15 10v6",
+    "M7 16h10",
+    "M8 20h2",
+    "M14 20h2",
   ],
 }
 
