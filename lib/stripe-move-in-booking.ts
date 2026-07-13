@@ -24,14 +24,24 @@ export async function finalizeMoveInPayment(input: {
     return true
   }
 
+  const update: {
+    status: "confirmed"
+    stripe_session_id: string
+    updated_at: string
+    profile_id?: string
+  } = {
+    status: "confirmed",
+    stripe_session_id: input.stripeSessionId,
+    updated_at: new Date().toISOString(),
+  }
+
+  if (input.profileId) {
+    update.profile_id = input.profileId
+  }
+
   const { error: updateError } = await supabase
     .from("move_in_bookings")
-    .update({
-      status: "confirmed",
-      stripe_session_id: input.stripeSessionId,
-      profile_id: input.profileId ?? undefined,
-      updated_at: new Date().toISOString(),
-    })
+    .update(update)
     .eq("id", input.moveInBookingId)
 
   if (updateError) {

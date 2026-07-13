@@ -11,6 +11,7 @@ import { Box, DollarSign, Plus, Truck } from "lucide-react"
 
 
 import { ActiveStorage } from "@/components/dashboard/active-storage"
+import { MoveInOrders } from "@/components/dashboard/move-in-orders"
 
 import type { ActiveBooking } from "@/components/dashboard/active-storage"
 
@@ -23,6 +24,7 @@ import type { PastBooking } from "@/components/dashboard/past-bookings"
 import { Button } from "@/components/ui/button"
 
 import { computeDashboardStats } from "@/lib/booking-display"
+import type { MoveInDashboardOrder } from "@/lib/move-in-display"
 
 import { siteContent } from "@/lib/site-content"
 
@@ -33,6 +35,10 @@ type DashboardViewProps = {
   activeBookings: ActiveBooking[]
 
   pastBookings: PastBooking[]
+
+  activeMoveIns?: MoveInDashboardOrder[]
+
+  pastMoveIns?: MoveInDashboardOrder[]
 
   university?: string | null
 
@@ -51,6 +57,10 @@ export function DashboardView({
   activeBookings,
 
   pastBookings,
+
+  activeMoveIns = [],
+
+  pastMoveIns = [],
 
   university,
 
@@ -209,11 +219,9 @@ export function DashboardView({
 
 
       <div className="space-y-11">
-
+        <MoveInOrders activeOrders={activeMoveIns} pastOrders={pastMoveIns} />
         <ActiveStorage bookings={activeBookings} />
-
         <PastBookings bookings={pastBookings} />
-
       </div>
 
     </>
