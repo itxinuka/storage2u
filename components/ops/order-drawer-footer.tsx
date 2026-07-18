@@ -1,6 +1,6 @@
 "use client"
 
-import { Trash2 } from "lucide-react"
+import { Printer, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
@@ -49,9 +49,26 @@ export function OrderDrawerFooter({
     })
   }
 
+  function handlePrintLabels() {
+    window.open(`/ops/orders/${order.id}/labels`, "_blank", "noopener,noreferrer")
+  }
+
+  const unitCount = order.units?.length ?? 0
+
   return (
     <>
       <div className="flex flex-col gap-2.5">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={handlePrintLabels}
+          disabled={unitCount === 0}
+        >
+          <Printer className="size-4" />
+          Print labels
+          {unitCount > 0 ? ` (${unitCount})` : ""}
+        </Button>
         <div className="flex gap-2.5">
           <Button
             variant="outline"

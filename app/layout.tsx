@@ -36,15 +36,13 @@ export default function RootLayout({
       lang="en"
       className={`${plusJakarta.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        <PostHogHeadScript />
-        <TawkToScript />
-      </head>
       <body className="min-h-full flex flex-col font-sans">
         <ClerkProvider appearance={{ theme: shadcn }}>
           {children}
           <Toaster />
         </ClerkProvider>
+        <PostHogHeadScript />
+        <TawkToScript />
       </body>
     </html>
   )

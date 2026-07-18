@@ -13,8 +13,19 @@ export type GeocodeResult =
   | { success: true; lat: number; lng: number }
   | { success: false; error: string }
 
+export type LngLat = { lat: number; lng: number }
+
+/** GeoJSON LineString coordinates: [lng, lat][] */
+export type RouteCoordinates = [number, number][]
+
 export type DrivingDistanceResult =
-  | { success: true; distanceKm: number }
+  | {
+      success: true
+      distanceKm: number
+      home: LngLat
+      campus: LngLat
+      route: RouteCoordinates
+    }
   | { success: false; error: string }
 
 function getMapboxToken(): string | null {
@@ -58,7 +69,7 @@ export async function geocodeHomeAddress(
 }
 
 export async function getDrivingDistanceKm(
-  home: { lat: number; lng: number },
+  home: LngLat,
   campus: MoveInCampus
 ): Promise<DrivingDistanceResult> {
   const token = getMapboxToken()
@@ -67,7 +78,7 @@ export async function getDrivingDistanceKm(
   }
 
   const coordinates = `${home.lng},${home.lat};${campus.lng},${campus.lat}`
-  const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?access_token=${token}&geometries=geojson&overview=false`
+  const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?access_token=${token}&geometries=geojson&overview=simplified`
 
   try {
     const response = await fetch(url, { next: { revalidate: 0 } })
@@ -76,16 +87,32 @@ export async function getDrivingDistanceKm(
     }
 
     const data = (await response.json()) as {
-      routes?: Array<{ distance?: number }>
+      routes?: Array<{
+        distance?: number
+        geometry?: { coordinates?: [number, number][] }
+      }>
       code?: string
     }
 
-    if (data.code !== "Ok" || !data.routes?.[0]?.distance) {
+    const route = data.routes?.[0]
+    if (data.code !== "Ok" || !route?.distance) {
       return { success: false, error: "Could not calculate driving distance." }
     }
 
-    const distanceKm = data.routes[0].distance / 1000
-    return { success: true, distanceKm }
+    const routeCoords = route.geometry?.coordinates
+    const fallbackRoute: RouteCoordinates = [
+      [home.lng, home.lat],
+      [campus.lng, campus.lat],
+    ]
+
+    return {
+      success: true,
+      distanceKm: route.distance / 1000,
+      home,
+      campus: { lat: campus.lat, lng: campus.lng },
+      route:
+        routeCoords && routeCoords.length >= 2 ? routeCoords : fallbackRoute,
+    }
   } catch {
     return { success: false, error: "Directions request failed." }
   }

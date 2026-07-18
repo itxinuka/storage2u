@@ -32,6 +32,7 @@ import {
   StepHead,
 } from "@/components/booking/booking-form-parts"
 import { ItemSelectionGrid } from "@/components/booking/item-selection-grid"
+import { MoveInQuoteMap } from "@/components/booking/move-in-quote-map"
 import { StepIndicator } from "@/components/booking/step-indicator"
 import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
@@ -638,6 +639,11 @@ export function MoveInWizard({ modeToggle }: MoveInWizardProps) {
                     </Card>
                   ) : quote?.success === true && quote.overCap ? (
                     <div className="space-y-4">
+                      <MoveInQuoteMap
+                        home={quote.home}
+                        campus={quote.campus}
+                        route={quote.route}
+                      />
                       <Card className="gap-0 border-0 py-0 shadow-brand">
                         <CardContent className="p-6">
                           <p className="font-bold text-foreground">
@@ -664,43 +670,50 @@ export function MoveInWizard({ modeToggle }: MoveInWizardProps) {
                       )}
                     </div>
                   ) : quote?.success === true && !quote.overCap ? (
-                    <Card className="gap-0 border-0 py-0 shadow-brand">
-                      <CardContent className="space-y-4 p-6">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Base fee</span>
-                          <span className="font-semibold">{formatMoney(BASE_FEE * 100)}</span>
-                        </div>
-                        {quote.extraItemCount > 0 ? (
+                    <div className="space-y-4">
+                      <MoveInQuoteMap
+                        home={quote.home}
+                        campus={quote.campus}
+                        route={quote.route}
+                      />
+                      <Card className="gap-0 border-0 py-0 shadow-brand">
+                        <CardContent className="space-y-4 p-6">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Base fee</span>
+                            <span className="font-semibold">{formatMoney(BASE_FEE * 100)}</span>
+                          </div>
+                          {quote.extraItemCount > 0 ? (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                Extra items ({quote.extraItemCount} × ${EXTRA_ITEM_FEE})
+                              </span>
+                              <span className="font-semibold">
+                                {formatMoney(quote.itemCharge * 100)}
+                              </span>
+                            </div>
+                          ) : null}
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">
-                              Extra items ({quote.extraItemCount} × ${EXTRA_ITEM_FEE})
+                              Distance charge ({quote.billableKm.toFixed(0)} km beyond{" "}
+                              {FREE_ZONE_KM} km free zone × ${PER_KM_RATE.toFixed(2)})
                             </span>
                             <span className="font-semibold">
-                              {formatMoney(quote.itemCharge * 100)}
+                              {formatMoney(Math.round(quote.distanceCharge * 100))}
                             </span>
                           </div>
-                        ) : null}
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            Distance charge ({quote.billableKm.toFixed(0)} km beyond{" "}
-                            {FREE_ZONE_KM} km free zone × ${PER_KM_RATE.toFixed(2)})
-                          </span>
-                          <span className="font-semibold">
-                            {formatMoney(Math.round(quote.distanceCharge * 100))}
-                          </span>
-                        </div>
-                        <div className="h-px bg-border" />
-                        <div className="flex justify-between">
-                          <span className="font-bold">One-time total</span>
-                          <span className="text-2xl font-extrabold">
-                            {formatMoney(quote.total * 100)}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {quote.distanceKm.toFixed(1)} km driving distance to campus
-                        </p>
-                      </CardContent>
-                    </Card>
+                          <div className="h-px bg-border" />
+                          <div className="flex justify-between">
+                            <span className="font-bold">One-time total</span>
+                            <span className="text-2xl font-extrabold">
+                              {formatMoney(quote.total * 100)}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {quote.distanceKm.toFixed(1)} km driving distance to campus
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
                   ) : quote?.success === false ? (
                     <p className="text-sm text-destructive">{quote.error}</p>
                   ) : null}

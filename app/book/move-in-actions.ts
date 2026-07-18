@@ -19,6 +19,8 @@ import {
   formatHomeAddress,
   quoteDrivingDistanceKm,
   type HomeAddress,
+  type LngLat,
+  type RouteCoordinates,
 } from "@/lib/mapbox"
 import { createOneTimeCheckout, getOrCreateCustomer, retrieveCheckoutSession } from "@/lib/stripe"
 import { finalizeMoveInPayment } from "@/lib/stripe-move-in-booking"
@@ -35,6 +37,12 @@ export type MoveInQuoteInput = {
   contactPhone?: string
 }
 
+export type MoveInQuoteMapPayload = {
+  home: LngLat
+  campus: LngLat
+  route: RouteCoordinates
+}
+
 export type MoveInQuoteResult =
   | {
       success: true
@@ -48,8 +56,18 @@ export type MoveInQuoteResult =
       distanceCharge: number
       total: number
       billableKm: number
+      home: LngLat
+      campus: LngLat
+      route: RouteCoordinates
     }
-  | { success: true; overCap: true; distanceKm: number }
+  | {
+      success: true
+      overCap: true
+      distanceKm: number
+      home: LngLat
+      campus: LngLat
+      route: RouteCoordinates
+    }
   | { success: false; error: string; code?: "validation" | "address" }
 
 export type MoveInQuoteRequestInput = MoveInQuoteInput & {
@@ -104,6 +122,7 @@ type RevalidateQuoteResult =
       distanceKm: number
       itemCount: number
       price: ReturnType<typeof computeMoveInPrice>
+      map: MoveInQuoteMapPayload
     }
 
 async function revalidateMoveInQuote(
@@ -145,6 +164,11 @@ async function revalidateMoveInQuote(
     distanceKm: distanceResult.distanceKm,
     itemCount: count,
     price,
+    map: {
+      home: distanceResult.home,
+      campus: distanceResult.campus,
+      route: distanceResult.route,
+    },
   }
 }
 
@@ -159,10 +183,17 @@ export async function calculateMoveInQuote(
     return { success: false, error: validated.addressError, code: "address" }
   }
 
-  const { campus, university, distanceKm, itemCount, price } = validated
+  const { campus, university, distanceKm, itemCount, price, map } = validated
 
   if (price.overCap) {
-    return { success: true, overCap: true, distanceKm }
+    return {
+      success: true,
+      overCap: true,
+      distanceKm,
+      home: map.home,
+      campus: map.campus,
+      route: map.route,
+    }
   }
 
   const supabase = createServiceRoleClient()
@@ -209,6 +240,9 @@ export async function calculateMoveInQuote(
     distanceCharge: price.distanceCharge,
     total: price.total,
     billableKm: price.billableKm,
+    home: map.home,
+    campus: map.campus,
+    route: map.route,
   }
 }
 

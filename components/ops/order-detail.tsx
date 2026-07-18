@@ -3,6 +3,7 @@
 import { Box, Package, Truck } from "lucide-react"
 
 import { OrderStatus } from "@/components/ops/order-status"
+import { UnitLabelCard } from "@/components/ops/unit-label-card"
 import { Badge } from "@/components/ui/badge"
 import type { OpsOrder } from "@/lib/ops/orders-types"
 import { cn } from "@/lib/utils"
@@ -41,6 +42,7 @@ type OrderDetailProps = {
 
 export function OrderDetail({ order, className }: OrderDetailProps) {
   const typeLabel = order.type === "pickup" ? "Pickup" : "Delivery"
+  const units = order.units ?? []
   const monthlyTotal =
     order.monthlyTotalCents > 0
       ? order.monthlyTotalCents
@@ -124,6 +126,27 @@ export function OrderDetail({ order, className }: OrderDetailProps) {
           </span>
         </div>
       </div>
+
+      <span className="mt-5 mb-2.5 block text-[12px] font-bold tracking-wide text-muted-foreground uppercase">
+        Labels · {units.length}
+      </span>
+
+      {units.length === 0 ? (
+        <div className="rounded-3xl bg-muted px-4 py-5 text-sm text-muted-foreground">
+          No labels generated for this order yet.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2.5">
+          {units.map((unit) => (
+            <UnitLabelCard
+              key={unit.id}
+              unit={unit}
+              displayId={order.displayId}
+              compact
+            />
+          ))}
+        </div>
+      )}
 
       <div className="mt-4 flex items-center gap-2 text-muted-foreground">
         <Truck className="size-[15px] shrink-0" />

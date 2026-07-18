@@ -15,6 +15,7 @@ import {
   buildLineItemsFromCounts,
   countsToSelection,
 } from "@/lib/ops/order-pricing"
+import { ensureBookingUnits } from "@/lib/ops/booking-units"
 import type { OpsOrder } from "@/lib/ops/orders-types"
 import type { ScheduleStop } from "@/lib/ops/dispatch-types"
 import { getOpsHub, getOpsToday, isPastScheduleDate } from "@/lib/ops/schedule-data"
@@ -665,12 +666,38 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       unit_price_cents: item.unit_price_cents,
     }))
 
-    const { error: itemsError } = await supabase.from("booking_items").insert(itemRows)
+    const { data: insertedItems, error: itemsError } = await supabase
+      .from("booking_items")
+      .insert(itemRows)
+      .select("id, name, qty")
 
-    if (itemsError) {
+    if (itemsError || !insertedItems) {
       await supabase.from("bookings").delete().eq("id", booking.id)
-      return { success: false, error: itemsError.message }
+      return {
+        success: false,
+        error: itemsError?.message ?? "Could not save order items",
+      }
     }
+
+    const unitsResult = await ensureBookingUnits(
+      supabase,
+      booking.id,
+      insertedItems,
+      booking.created_at
+    )
+    if (unitsResult.error) {
+      await supabase.from("bookings").delete().eq("id", booking.id)
+      return { success: false, error: unitsResult.error }
+    }
+
+    const { data: unitRows } = await supabase
+      .from("booking_units")
+      .select(
+        "id, kind, code, label_name, unit_index, booking_item_id, created_at"
+      )
+      .eq("booking_id", booking.id)
+      .order("kind", { ascending: true })
+      .order("unit_index", { ascending: true })
 
     let stopKey: string
     let deliveryRequestId: string | null = null
@@ -734,6 +761,8 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
 
     const orderLineItems = buildLineItemsFromCounts(input.boxes, input.items)
     const monthlyTotalCents = total * 100
+    const qtyByItemId = new Map(insertedItems.map((item) => [item.id, item.qty]))
+    const placedDateLabel = formatScheduleDate(booking.created_at.slice(0, 10))
 
     const order: OpsOrder = {
       id: booking.id,
@@ -752,8 +781,27 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       monthlyTotalCents,
       monthlyDisplay: `$${total}/mo`,
       createdAt: booking.created_at,
-      placedDateLabel: formatScheduleDate(booking.created_at.slice(0, 10)),
+      placedDateLabel,
       lineItems: orderLineItems,
+      units: [...(unitRows ?? [])]
+        .filter((unit) => unit.kind === "unit")
+        .sort((a, b) => {
+          if (a.unit_index !== b.unit_index) return a.unit_index - b.unit_index
+          return a.code.localeCompare(b.code)
+        })
+        .map((unit) => ({
+        id: unit.id,
+        kind: unit.kind,
+        code: unit.code,
+        labelName: unit.label_name,
+        unitIndex: unit.unit_index,
+        unitQty: unit.booking_item_id
+          ? (qtyByItemId.get(unit.booking_item_id) ?? null)
+          : null,
+        bookingItemId: unit.booking_item_id,
+        createdAt: unit.created_at,
+        dateLabel: placedDateLabel,
+      })),
       driver: null,
     }
 

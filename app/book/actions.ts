@@ -22,6 +22,7 @@ import { humanizeBookingError } from "@/lib/booking-action-errors"
 import { monthlyTotalWithProtection } from "@/lib/protection-plan"
 import { validateBookingSchedule, type BookingBlock } from "@/lib/booking-availability"
 import { getBookingBlocks } from "@/lib/ops/availability-data"
+import { ensureBookingUnits } from "@/lib/ops/booking-units"
 import { createServiceRoleClient } from "@/lib/supabase/service"
 import { debugLog } from "@/lib/debug-log"
 
@@ -261,13 +262,35 @@ export async function createBooking(
     unit_price_cents: item.unit_price_cents,
   }))
 
-  const { error: itemsError } = await supabase.from("booking_items").insert(rows)
+  const { data: insertedItems, error: itemsError } = await supabase
+    .from("booking_items")
+    .insert(rows)
+    .select("id, name, qty")
 
-  if (itemsError) {
+  if (itemsError || !insertedItems) {
     await supabase.from("bookings").delete().eq("id", booking.id)
     return {
       success: false,
-      error: humanizeBookingError(itemsError.message, "Could not save your items."),
+      error: humanizeBookingError(
+        itemsError?.message,
+        "Could not save your items."
+      ),
+    }
+  }
+
+  const unitsResult = await ensureBookingUnits(
+    supabase,
+    booking.id,
+    insertedItems
+  )
+  if (unitsResult.error) {
+    await supabase.from("bookings").delete().eq("id", booking.id)
+    return {
+      success: false,
+      error: humanizeBookingError(
+        unitsResult.error,
+        "Could not create item labels."
+      ),
     }
   }
 

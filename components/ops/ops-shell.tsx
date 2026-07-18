@@ -186,20 +186,37 @@ export function OpsLayoutShell({
 }>) {
   const pathname = usePathname()
   const active = getActiveOpsNavId(pathname)
+  const isLabelsPrint = pathname.includes("/labels")
 
   return (
-    <div className="min-h-screen bg-background lg:flex">
-      <OpsSidebar active={active} hub={hub} />
+    <div
+      className={cn(
+        "min-h-screen bg-background lg:flex",
+        isLabelsPrint && "print:block"
+      )}
+    >
+      <div className={cn(isLabelsPrint && "print:hidden")}>
+        <OpsSidebar active={active} hub={hub} />
+      </div>
 
       <div className="min-w-0 flex-1">
-        <OpsMobileHeader />
+        <div className={cn(isLabelsPrint && "print:hidden")}>
+          <OpsMobileHeader />
+        </div>
 
-        <main className="mx-auto max-w-[1040px] px-4 py-6 pb-28 lg:px-8 lg:py-9 lg:pb-12">
+        <main
+          className={cn(
+            "mx-auto max-w-[1040px] px-4 py-6 pb-28 lg:px-8 lg:py-9 lg:pb-12",
+            isLabelsPrint && "print:max-w-none print:p-0 print:pb-0"
+          )}
+        >
           {children}
         </main>
       </div>
 
-      <OpsBottomNav active={active} />
+      <div className={cn(isLabelsPrint && "print:hidden")}>
+        <OpsBottomNav active={active} />
+      </div>
     </div>
   )
 }

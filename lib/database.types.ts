@@ -50,6 +50,54 @@ export type Database = {
           },
         ]
       }
+      booking_units: {
+        Row: {
+          booking_id: string
+          booking_item_id: string | null
+          code: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["booking_unit_kind"]
+          label_name: string
+          unit_index: number
+        }
+        Insert: {
+          booking_id: string
+          booking_item_id?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["booking_unit_kind"]
+          label_name: string
+          unit_index: number
+        }
+        Update: {
+          booking_id?: string
+          booking_item_id?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["booking_unit_kind"]
+          label_name?: string
+          unit_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_units_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_units_booking_item_id_fkey"
+            columns: ["booking_item_id"]
+            isOneToOne: false
+            referencedRelation: "booking_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_blocks: {
         Row: {
           block_date: string
@@ -653,6 +701,7 @@ export type Database = {
     }
     Enums: {
       booking_item_kind: "box" | "item"
+      booking_unit_kind: "order" | "unit"
       booking_mode: "pickup" | "delivery"
       booking_status:
         | "pending_payment"
@@ -678,6 +727,7 @@ export type Database = {
 
 export type Booking = Database["public"]["Tables"]["bookings"]["Row"]
 export type BookingItem = Database["public"]["Tables"]["booking_items"]["Row"]
+export type BookingUnit = Database["public"]["Tables"]["booking_units"]["Row"]
 export type BookingWithItems = Booking & { booking_items: BookingItem[] }
 export type MoveInBooking = Database["public"]["Tables"]["move_in_bookings"]["Row"]
 export type MoveInQuoteRequest =

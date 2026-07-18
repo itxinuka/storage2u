@@ -2,7 +2,12 @@ import { OPEN_DELIVERY_STATUSES } from "@/lib/delivery-statuses"
 import type { Database } from "@/lib/database.types"
 import type { OpsOrderStatus } from "@/lib/ops-types"
 import { getOpsHub } from "@/lib/ops/schedule-data"
-import type { OpsOrder, OpsOrderLineItem, OrdersPageData } from "@/lib/ops/orders-types"
+import type {
+  OpsOrder,
+  OpsOrderLineItem,
+  OpsUnitLabel,
+  OrdersPageData,
+} from "@/lib/ops/orders-types"
 import { createServiceRoleClient } from "@/lib/supabase/service"
 
 type BookingStatus = Database["public"]["Enums"]["booking_status"]
@@ -37,6 +42,15 @@ type BookingRow = {
     name: string
     qty: number
     unit_price_cents: number
+  }> | null
+  booking_units: Array<{
+    id: string
+    kind: Database["public"]["Enums"]["booking_unit_kind"]
+    code: string
+    label_name: string
+    unit_index: number
+    booking_item_id: string | null
+    created_at: string
   }> | null
 }
 
@@ -145,6 +159,33 @@ function buildLineItems(
     }))
 }
 
+function buildUnits(
+  units: BookingRow["booking_units"],
+  items: BookingRow["booking_items"]
+): OpsUnitLabel[] {
+  const qtyByItemId = new Map((items ?? []).map((item) => [item.id, item.qty]))
+
+  return [...(units ?? [])]
+    .filter((unit) => unit.kind === "unit")
+    .sort((a, b) => {
+      if (a.unit_index !== b.unit_index) return a.unit_index - b.unit_index
+      return a.code.localeCompare(b.code)
+    })
+    .map((unit) => ({
+      id: unit.id,
+      kind: unit.kind,
+      code: unit.code,
+      labelName: unit.label_name,
+      unitIndex: unit.unit_index,
+      unitQty: unit.booking_item_id
+        ? (qtyByItemId.get(unit.booking_item_id) ?? null)
+        : null,
+      bookingItemId: unit.booking_item_id,
+      createdAt: unit.created_at,
+      dateLabel: formatPlacedDate(unit.created_at),
+    }))
+}
+
 function countBoxes(items: BookingRow["booking_items"]): number {
   return (items ?? [])
     .filter((item) => item.kind === "box")
@@ -211,7 +252,8 @@ export async function getOrdersPageData(): Promise<OrdersPageData> {
         status,
         monthly_total_cents,
         profiles ( full_name, email, phone ),
-        booking_items ( id, kind, name, qty, unit_price_cents )
+        booking_items ( id, kind, name, qty, unit_price_cents ),
+        booking_units ( id, kind, code, label_name, unit_index, booking_item_id, created_at )
       `
       )
       .order("created_at", { ascending: false }),
@@ -256,6 +298,7 @@ export async function getOrdersPageData(): Promise<OrdersPageData> {
       const status = mapBookingToOpsStatus(row.status, openDelivery)
       const type = resolveOrderType(row.mode, openDelivery)
       const lineItems = buildLineItems(row.booking_items)
+      const units = buildUnits(row.booking_units, row.booking_items)
       const monthlyTotalCents =
         row.monthly_total_cents > 0
           ? row.monthly_total_cents
@@ -280,6 +323,7 @@ export async function getOrdersPageData(): Promise<OrdersPageData> {
         createdAt: row.created_at,
         placedDateLabel: formatPlacedDate(row.created_at),
         lineItems,
+        units,
         driver: resolveDriverLabel(row.id, type, dispatchByBooking),
       }
     }

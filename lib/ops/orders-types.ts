@@ -9,6 +9,18 @@ export type OpsOrderLineItem = {
   subtotalCents: number
 }
 
+export type OpsUnitLabel = {
+  id: string
+  kind: "order" | "unit"
+  code: string
+  labelName: string
+  unitIndex: number
+  unitQty: number | null
+  bookingItemId: string | null
+  createdAt: string
+  dateLabel: string
+}
+
 export type OpsOrder = {
   id: string
   displayId: string
@@ -28,6 +40,7 @@ export type OpsOrder = {
   createdAt: string
   placedDateLabel: string
   lineItems: OpsOrderLineItem[]
+  units: OpsUnitLabel[]
   driver: string | null
 }
 
