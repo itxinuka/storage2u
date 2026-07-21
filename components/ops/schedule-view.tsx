@@ -8,10 +8,12 @@ import {
   ChevronRight,
   CircleCheck,
   Plus,
+  ScanLine,
   Trash2,
   Truck,
   Users,
 } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState, useTransition } from "react"
 import { toast } from "sonner"
@@ -81,13 +83,37 @@ function TypeBadge({ type }: { type: ScheduleStop["type"] }) {
   )
 }
 
-function DispatchStatusBadge({ status }: { status: ScheduleStop["status"] }) {
+function DispatchStatusBadge({
+  status,
+  variance,
+}: {
+  status: ScheduleStop["status"]
+  variance?: ScheduleStop["pickupVariance"]
+}) {
   if (status === "done") {
     return (
-      <Badge className="rounded-full border-transparent bg-lime-soft font-bold text-accent-foreground">
-        <CircleCheck className="size-3" />
-        Completed
-      </Badge>
+      <div className="flex flex-wrap items-center justify-end gap-1.5">
+        <Badge className="rounded-full border-transparent bg-lime-soft font-bold text-accent-foreground">
+          <CircleCheck className="size-3" />
+          Completed
+        </Badge>
+        {variance && variance !== "exact" ? (
+          <Badge
+            className={cn(
+              "rounded-full border-transparent font-bold",
+              variance === "short" || variance === "mixed"
+                ? "bg-[var(--danger-bg)] text-[var(--danger-fg)]"
+                : "bg-purple-soft text-primary"
+            )}
+          >
+            {variance === "short"
+              ? "Short"
+              : variance === "over"
+                ? "Over"
+                : "Mixed"}
+          </Badge>
+        ) : null}
+      </div>
     )
   }
   if (status === "out") {
@@ -427,96 +453,94 @@ export function ScheduleView({
           />
         </div>
 
-        <Card className="overflow-hidden py-0">
-          <div className="hidden grid-cols-[0.7fr_1.3fr_0.9fr_2fr_0.6fr_1fr_1.1fr_auto] gap-3.5 bg-muted px-5 py-3 text-[11px] font-bold tracking-wide text-muted-foreground uppercase md:grid">
-            <span>Time</span>
-            <span>Customer</span>
-            <span>Type</span>
-            <span>Campus / address</span>
-            <span>Boxes</span>
-            <span>Driver</span>
-            <span className="text-right">Status</span>
-            <span className="sr-only">Actions</span>
-          </div>
-
-          {rows.length === 0 ? (
-            <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+        {rows.length === 0 ? (
+          <Card className="py-5">
+            <CardContent className="text-center text-sm text-muted-foreground">
               {emptyStateMessage}
-            </div>
-          ) : (
-            rows.map((stop) => (
-              <div
-                key={stop.stopKey}
-                className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 border-t border-border px-4 py-4 md:grid-cols-[0.7fr_1.3fr_0.9fr_2fr_0.6fr_1fr_1.1fr_auto] md:items-center md:gap-3.5 md:px-5"
-              >
-                <span className="text-[13.5px] font-extrabold text-foreground tabular-nums md:col-auto">
-                  {stop.time}
-                </span>
-
-                <div className="md:col-auto">
-                  <div className="text-[13.5px] font-bold text-foreground">
-                    {stop.customer}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {rows.map((stop) => (
+              <Card key={stop.stopKey} className="py-4">
+                <CardContent className="flex flex-col gap-3.5">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <span className="text-[15px] font-extrabold text-foreground">
+                      {stop.time}
+                    </span>
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                      <TypeBadge type={stop.type} />
+                      <DispatchStatusBadge
+                        status={stop.status}
+                        variance={stop.pickupVariance}
+                      />
+                    </div>
                   </div>
-                  <div className="text-[11.5px] text-muted-foreground">
-                    #{stop.orderId}
+
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                      <span className="text-[15px] font-bold text-foreground">
+                        {stop.customer}
+                      </span>
+                      <span className="text-[12.5px] text-muted-foreground">
+                        #{stop.orderId}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[13.5px] leading-snug text-muted-foreground">
+                      <span className="font-bold text-foreground">
+                        {stop.university}
+                      </span>
+                      {" · "}
+                      {stop.address}
+                    </p>
                   </div>
-                </div>
 
-                <span className="hidden md:inline">
-                  <TypeBadge type={stop.type} />
-                </span>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span className="text-[13.5px] font-semibold text-foreground">
+                        {stop.boxes} {stop.boxes === 1 ? "box" : "boxes"}
+                      </span>
+                      <DriverBadge
+                        stop={stop}
+                        canMutate={canMutate}
+                        pending={pending}
+                        onAssign={setAssignStop}
+                      />
+                    </div>
 
-                <div className="col-span-2 min-w-0 text-[13px] md:col-auto">
-                  <span className="font-bold text-foreground">
-                    {stop.university}
-                  </span>
-                  <span className="text-muted-foreground"> · {stop.address}</span>
-                </div>
-
-                <span className="hidden text-[13.5px] font-semibold md:inline">
-                  {stop.boxes}
-                </span>
-
-                <span className="hidden md:inline">
-                  <DriverBadge
-                    stop={stop}
-                    canMutate={canMutate}
-                    pending={pending}
-                    onAssign={setAssignStop}
-                  />
-                </span>
-
-                <div className="flex items-center justify-end gap-2 md:col-auto">
-                  <DispatchStatusBadge status={stop.status} />
-                  {canMutate ? (
-                    <button
-                      type="button"
-                      disabled={pending}
-                      onClick={() => setDeleteStop(stop)}
-                      aria-label="Remove scheduled stop"
-                      className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full border-0 bg-[var(--danger-bg)] text-[var(--danger-fg)] transition-colors hover:brightness-95 disabled:opacity-50"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  ) : null}
-                </div>
-
-                <div className="col-span-2 flex flex-wrap items-center gap-2 md:hidden">
-                  <TypeBadge type={stop.type} />
-                  <span className="text-[13px] font-semibold">
-                    {stop.boxes} boxes
-                  </span>
-                  <DriverBadge
-                    stop={stop}
-                    canMutate={canMutate}
-                    pending={pending}
-                    onAssign={setAssignStop}
-                  />
-                </div>
-              </div>
-            ))
-          )}
-        </Card>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {canMutate &&
+                      stop.type === "pickup" &&
+                      stop.status !== "done" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          render={
+                            <Link href={`/ops/schedule/${stop.id}/pickup`} />
+                          }
+                        >
+                          <ScanLine className="size-3.5" />
+                          Start pickup
+                        </Button>
+                      ) : null}
+                      {canMutate ? (
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() => setDeleteStop(stop)}
+                          aria-label="Remove scheduled stop"
+                          className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full border-0 bg-[var(--danger-bg)] text-[var(--danger-fg)] transition-colors hover:brightness-95 disabled:opacity-50"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </section>
 
       <div className="grid items-start gap-7 xl:grid-cols-2">

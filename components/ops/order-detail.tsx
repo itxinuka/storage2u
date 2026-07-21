@@ -23,6 +23,36 @@ function TypeBadge({ type }: { type: OpsOrder["type"] }) {
   )
 }
 
+function VarianceBadge({ variance }: { variance: OpsOrder["pickupVariance"] }) {
+  if (!variance) return null
+  if (variance === "exact") {
+    return (
+      <Badge className="rounded-full border-transparent bg-lime-soft font-bold text-accent-foreground">
+        Count exact
+      </Badge>
+    )
+  }
+  if (variance === "short") {
+    return (
+      <Badge className="rounded-full border-transparent bg-[var(--danger-bg)] font-bold text-[var(--danger-fg)]">
+        Short count
+      </Badge>
+    )
+  }
+  if (variance === "over") {
+    return (
+      <Badge className="rounded-full border-transparent bg-purple-soft font-bold text-primary">
+        Over count
+      </Badge>
+    )
+  }
+  return (
+    <Badge className="rounded-full border-transparent bg-muted font-bold text-muted-foreground">
+      Mixed variance
+    </Badge>
+  )
+}
+
 function formatUnitPrice(cents: number): string {
   return `$${(cents / 100).toFixed(cents % 100 === 0 ? 0 : 2)}`
 }
@@ -33,6 +63,16 @@ function formatSubtotal(cents: number): string {
 
 function formatMonthlyTotal(cents: number): string {
   return `$${Math.round(cents / 100)}`
+}
+
+function formatSignedAt(iso: string): string {
+  return new Date(iso).toLocaleString("en-CA", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
 }
 
 type OrderDetailProps = {
@@ -47,6 +87,7 @@ export function OrderDetail({ order, className }: OrderDetailProps) {
     order.monthlyTotalCents > 0
       ? order.monthlyTotalCents
       : order.lineItems.reduce((sum, item) => sum + item.subtotalCents, 0)
+  const signoff = order.pickupSignoff
 
   const meta = [
     ["Customer", order.customer],
@@ -60,6 +101,7 @@ export function OrderDetail({ order, className }: OrderDetailProps) {
       <div className="mb-4 flex flex-wrap items-center gap-2.5">
         <TypeBadge type={order.type} />
         <OrderStatus status={order.status} />
+        <VarianceBadge variance={order.pickupVariance} />
       </div>
 
       <div className="mb-5 grid grid-cols-2 gap-3.5">
@@ -126,6 +168,45 @@ export function OrderDetail({ order, className }: OrderDetailProps) {
           </span>
         </div>
       </div>
+
+      {signoff ? (
+        <>
+          <span className="mt-5 mb-2.5 block text-[12px] font-bold tracking-wide text-muted-foreground uppercase">
+            Pickup sign-off
+          </span>
+          <div className="rounded-3xl border border-border bg-card p-4">
+            <div className="text-sm font-bold text-foreground">
+              {signoff.signerName}
+            </div>
+            <div className="mt-0.5 text-[12.5px] text-muted-foreground">
+              Signed {formatSignedAt(signoff.signedAt)} · {signoff.scannedCount}{" "}
+              scanned
+              {signoff.addedCount > 0 ? ` · +${signoff.addedCount} added` : ""}
+              {signoff.missingCount > 0
+                ? ` · ${signoff.missingCount} missing`
+                : ""}
+            </div>
+            {signoff.varianceNotes ? (
+              <p className="mt-2 text-[12.5px] text-muted-foreground">
+                {signoff.varianceNotes}
+              </p>
+            ) : null}
+            {signoff.billingNote ? (
+              <p className="mt-2 text-[12.5px] font-semibold text-[var(--danger-fg)]">
+                {signoff.billingNote}
+              </p>
+            ) : null}
+            {signoff.signatureDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={signoff.signatureDataUrl}
+                alt={`Signature of ${signoff.signerName}`}
+                className="mt-3 w-full rounded-2xl border border-border bg-white"
+              />
+            ) : null}
+          </div>
+        </>
+      ) : null}
 
       <span className="mt-5 mb-2.5 block text-[12px] font-bold tracking-wide text-muted-foreground uppercase">
         Labels · {units.length}

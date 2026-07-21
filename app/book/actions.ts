@@ -24,7 +24,6 @@ import { validateBookingSchedule, type BookingBlock } from "@/lib/booking-availa
 import { getBookingBlocks } from "@/lib/ops/availability-data"
 import { ensureBookingUnits } from "@/lib/ops/booking-units"
 import { createServiceRoleClient } from "@/lib/supabase/service"
-import { debugLog } from "@/lib/debug-log"
 
 type BookingItemKind = Database["public"]["Enums"]["booking_item_kind"]
 type BookingModeDb = Database["public"]["Enums"]["booking_mode"]
@@ -116,13 +115,8 @@ async function resolveBookingIdentity(): Promise<BookingIdentity | null> {
         null
       fullName =
         [user?.firstName, user?.lastName].filter(Boolean).join(" ") || fullName
-    } catch (err) {
-      debugLog(
-        "actions.ts:resolveBookingIdentity",
-        "currentUser failed",
-        { message: err instanceof Error ? err.message : String(err) },
-        "A"
-      )
+    } catch {
+      // currentUser lookup is best-effort; fall back to session claim values
     }
   }
 
@@ -132,9 +126,6 @@ async function resolveBookingIdentity(): Promise<BookingIdentity | null> {
 export async function createBooking(
   input: CreateBookingInput
 ): Promise<CreateBookingResult> {
-  // #region agent log
-  debugLog("actions.ts:createBooking", "entry", { mode: input.mode }, "A")
-  // #endregion
   try {
   const identity = await resolveBookingIdentity()
   if (!identity) {
@@ -198,14 +189,6 @@ export async function createBooking(
     .single()
 
   if (profileError || !profile) {
-    // #region agent log
-    debugLog(
-      "actions.ts:createBooking",
-      "profile upsert failed",
-      { code: profileError?.code, message: profileError?.message },
-      "A"
-    )
-    // #endregion
     return {
       success: false,
       error: humanizeBookingError(
@@ -236,14 +219,6 @@ export async function createBooking(
     .single()
 
   if (bookingError || !booking) {
-    // #region agent log
-    debugLog(
-      "actions.ts:createBooking",
-      "booking insert failed",
-      { code: bookingError?.code, message: bookingError?.message },
-      "D"
-    )
-    // #endregion
     return {
       success: false,
       error: humanizeBookingError(
@@ -295,19 +270,8 @@ export async function createBooking(
   }
 
   revalidatePath("/dashboard")
-  // #region agent log
-  debugLog("actions.ts:createBooking", "success", { bookingId: booking.id }, "A")
-  // #endregion
   return { success: true, bookingId: booking.id }
   } catch (err) {
-    // #region agent log
-    debugLog(
-      "actions.ts:createBooking",
-      "uncaught throw",
-      { message: err instanceof Error ? err.message : String(err) },
-      "A"
-    )
-    // #endregion
     return {
       success: false,
       error: humanizeBookingError(
@@ -450,9 +414,6 @@ export async function confirmSubscriptionBooking(
 export async function createCheckoutSession(
   bookingId: string
 ): Promise<CheckoutSessionResult> {
-  // #region agent log
-  debugLog("actions.ts:createCheckoutSession", "entry", { bookingId }, "B")
-  // #endregion
   try {
   const identity = await resolveBookingIdentity()
   if (!identity) {
@@ -565,15 +526,7 @@ export async function createCheckoutSession(
           limit: 1,
         })
       ).data.length > 0
-  } catch (err) {
-    // #region agent log
-    debugLog(
-      "actions.ts:createCheckoutSession",
-      "subscription list failed",
-      { message: err instanceof Error ? err.message : String(err), customerId },
-      "B"
-    )
-    // #endregion
+  } catch {
     return {
       success: false,
       error: "Could not verify your billing account. Please try again.",
@@ -582,14 +535,6 @@ export async function createCheckoutSession(
   }
 
   const origin = await getOrigin()
-  // #region agent log
-  debugLog(
-    "actions.ts:createCheckoutSession",
-    "resolved origin",
-    { origin, lineItemCount: stripeLineItems.length },
-    "E"
-  )
-  // #endregion
 
   if (hasActiveSubscription) {
     return { url: `${origin}/book/confirm-payment?booking_id=${bookingId}` }
@@ -613,14 +558,6 @@ export async function createCheckoutSession(
 
   return { url: checkoutUrl }
   } catch (err) {
-    // #region agent log
-    debugLog(
-      "actions.ts:createCheckoutSession",
-      "uncaught throw",
-      { message: err instanceof Error ? err.message : String(err) },
-      "B"
-    )
-    // #endregion
     return {
       success: false,
       error: humanizeBookingError(

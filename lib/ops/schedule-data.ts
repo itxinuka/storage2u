@@ -8,6 +8,7 @@ import type {
   StaffRosterMember,
   UpcomingDay,
 } from "@/lib/ops/dispatch-types"
+import { derivePickupVariance } from "@/lib/ops/pickup-data"
 import { createServiceRoleClient } from "@/lib/supabase/service"
 
 type DispatchAssignmentRow = {
@@ -181,6 +182,7 @@ export async function getSchedulePageData(
     staffResult,
     upcomingPickupsResult,
     upcomingDeliveriesResult,
+    pickupSessionsResult,
   ] = await Promise.all([
     supabase
       .from("bookings")
@@ -270,8 +272,30 @@ export async function getSchedulePageData(
       .gte("requested_date", addDays(selectedDate, 1))
       .lte("requested_date", addDays(selectedDate, 3))
       .neq("status", "cancelled"),
+    supabase
+      .from("pickup_sessions")
+      .select(
+        "booking_id, status, expected_count, scanned_count, added_count, missing_count, completed_at"
+      )
+      .eq("status", "completed")
+      .order("completed_at", { ascending: false }),
   ])
 
+  const pickupVarianceByBooking = new Map<
+    string,
+    NonNullable<ScheduleStop["pickupVariance"]>
+  >()
+  for (const row of pickupSessionsResult.data ?? []) {
+    if (pickupVarianceByBooking.has(row.booking_id)) continue
+    const variance = derivePickupVariance({
+      expectedCount: row.expected_count,
+      scannedCount: row.scanned_count,
+      addedCount: row.added_count,
+      missingCount: row.missing_count,
+      status: row.status,
+    })
+    if (variance) pickupVarianceByBooking.set(row.booking_id, variance)
+  }
   const dispatchRows = (dispatchResult.data as DispatchAssignmentRow[] | null) ?? []
   const pickupAssignments = new Map(
     dispatchRows
@@ -305,6 +329,7 @@ export async function getSchedulePageData(
       driverAssignmentId: assignment?.shift_assignment_id ?? null,
       dispatchAssignmentId: assignment?.id ?? null,
       status: derivePickupStatus(row.status, assignment?.dispatch_status ?? null),
+      pickupVariance: pickupVarianceByBooking.get(row.id) ?? null,
     })
   }
 
@@ -328,6 +353,7 @@ export async function getSchedulePageData(
       driverAssignmentId: assignment?.shift_assignment_id ?? null,
       dispatchAssignmentId: assignment?.id ?? null,
       status: deriveDeliveryStatus(row.status, assignment?.dispatch_status ?? null),
+      pickupVariance: null,
     })
   }
 

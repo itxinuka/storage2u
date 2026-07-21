@@ -400,11 +400,11 @@ export function BookingWizard({
   const mode: BookingMode = "pickup"
   const [step, setStep] = useState(defaultDraft.step)
 
-  const [done, setDone] = useState(false)
+  const [done] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [pendingSubmit, setPendingSubmit] = useState(false)
   const [pendingStep, setPendingStep] = useState<number | null>(null)
-  const [bookingId, setBookingId] = useState<string | null>(null)
+  const [bookingId] = useState<string | null>(null)
   const [draftHydrated, setDraftHydrated] = useState(false)
 
   const [form, setForm] = useState<FormState>(defaultDraft.form)

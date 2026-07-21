@@ -59,6 +59,7 @@ export type Database = {
           id: string
           kind: Database["public"]["Enums"]["booking_unit_kind"]
           label_name: string
+          pickup_status: Database["public"]["Enums"]["booking_unit_pickup_status"]
           unit_index: number
         }
         Insert: {
@@ -69,6 +70,7 @@ export type Database = {
           id?: string
           kind: Database["public"]["Enums"]["booking_unit_kind"]
           label_name: string
+          pickup_status?: Database["public"]["Enums"]["booking_unit_pickup_status"]
           unit_index: number
         }
         Update: {
@@ -79,6 +81,7 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["booking_unit_kind"]
           label_name?: string
+          pickup_status?: Database["public"]["Enums"]["booking_unit_pickup_status"]
           unit_index?: number
         }
         Relationships: [
@@ -94,6 +97,120 @@ export type Database = {
             columns: ["booking_item_id"]
             isOneToOne: false
             referencedRelation: "booking_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pickup_sessions: {
+        Row: {
+          added_count: number
+          billing_note: string | null
+          booking_id: string
+          completed_at: string | null
+          created_at: string
+          created_by_clerk_id: string | null
+          expected_count: number
+          id: string
+          missing_count: number
+          scanned_count: number
+          shortfall_acknowledged: boolean
+          signature_data_url: string | null
+          signed_at: string | null
+          signer_name: string | null
+          staff_id: string | null
+          status: Database["public"]["Enums"]["pickup_session_status"]
+          variance_notes: string | null
+        }
+        Insert: {
+          added_count?: number
+          billing_note?: string | null
+          booking_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by_clerk_id?: string | null
+          expected_count?: number
+          id?: string
+          missing_count?: number
+          scanned_count?: number
+          shortfall_acknowledged?: boolean
+          signature_data_url?: string | null
+          signed_at?: string | null
+          signer_name?: string | null
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["pickup_session_status"]
+          variance_notes?: string | null
+        }
+        Update: {
+          added_count?: number
+          billing_note?: string | null
+          booking_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by_clerk_id?: string | null
+          expected_count?: number
+          id?: string
+          missing_count?: number
+          scanned_count?: number
+          shortfall_acknowledged?: boolean
+          signature_data_url?: string | null
+          signed_at?: string | null
+          signer_name?: string | null
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["pickup_session_status"]
+          variance_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pickup_sessions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickup_sessions_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pickup_unit_scans: {
+        Row: {
+          booking_unit_id: string
+          id: string
+          scanned_at: string
+          session_id: string
+          source: Database["public"]["Enums"]["pickup_scan_source"]
+        }
+        Insert: {
+          booking_unit_id: string
+          id?: string
+          scanned_at?: string
+          session_id: string
+          source?: Database["public"]["Enums"]["pickup_scan_source"]
+        }
+        Update: {
+          booking_unit_id?: string
+          id?: string
+          scanned_at?: string
+          session_id?: string
+          source?: Database["public"]["Enums"]["pickup_scan_source"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pickup_unit_scans_booking_unit_id_fkey"
+            columns: ["booking_unit_id"]
+            isOneToOne: false
+            referencedRelation: "booking_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickup_unit_scans_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "pickup_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -721,6 +838,9 @@ export type Database = {
       shift_assignment_status: "available" | "loading" | "on_route"
       staff_role: "driver" | "mover" | "dispatcher"
       stop_kind: "pickup" | "delivery"
+      pickup_session_status: "in_progress" | "completed" | "cancelled"
+      booking_unit_pickup_status: "expected" | "scanned" | "missing" | "added"
+      pickup_scan_source: "scan" | "manual_add"
     }
   }
 }

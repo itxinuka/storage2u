@@ -18,6 +18,7 @@ export type ScheduleStop = {
   driverAssignmentId: string | null
   dispatchAssignmentId: string | null
   status: DispatchStopStatus
+  pickupVariance: "exact" | "short" | "over" | "mixed" | null
 }
 
 export type ShiftDriver = {

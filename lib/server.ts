@@ -4,7 +4,6 @@ import { auth } from "@clerk/nextjs/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 
 import type { Database } from "@/lib/database.types"
-import { debugLog } from "@/lib/debug-log"
 import { createServiceRoleClient } from "@/lib/supabase/service"
 
 function requireSupabasePublicEnv() {
@@ -43,15 +42,6 @@ export async function createClient() {
   const { url, key } = requireSupabasePublicEnv()
   const token = await getClerkSupabaseToken()
 
-  // #region agent log
-  debugLog(
-    "server.ts:createClient",
-    "token resolved",
-    { hasToken: Boolean(token) },
-    "C"
-  )
-  // #endregion
-
   if (token) {
     return createSupabaseClient<Database>(url, key, {
       global: {
@@ -65,26 +55,5 @@ export async function createClient() {
     })
   }
 
-  // #region agent log
-  debugLog(
-    "server.ts:createClient",
-    "falling back to service role",
-    {},
-    "C"
-  )
-  // #endregion
-
-  try {
-    return createServiceRoleClient()
-  } catch (err) {
-    // #region agent log
-    debugLog(
-      "server.ts:createClient",
-      "service role fallback failed",
-      { message: err instanceof Error ? err.message : String(err) },
-      "C"
-    )
-    // #endregion
-    throw err
-  }
+  return createServiceRoleClient()
 }

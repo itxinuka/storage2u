@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Design prototype reference (not part of the app build)
     "prototype/**",
+    // Static HTML / design-system snapshots (not part of the Next app build)
+    "public/**",
   ]),
 ]);
 

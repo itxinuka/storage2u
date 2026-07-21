@@ -1,6 +1,5 @@
 import "server-only"
 
-import type { SelectionMap } from "@/lib/booking-catalog"
 import { PROTECTION_CATALOG_ID } from "@/lib/protection-plan"
 import { getStripe } from "@/lib/stripe"
 
@@ -121,21 +120,6 @@ export async function getStripePriceId(
 }
 
 export type StripeLineItem = { price: string; quantity: number }
-
-export async function selectionToStripeLineItems(
-  selection: SelectionMap
-): Promise<StripeLineItem[]> {
-  const items: StripeLineItem[] = []
-  for (const [catalogId, qty] of Object.entries(selection)) {
-    if (qty <= 0) continue
-    const priceId = await getStripePriceId(catalogId)
-    if (!priceId) {
-      throw new Error(`No Stripe price configured for catalog item "${catalogId}".`)
-    }
-    items.push({ price: priceId, quantity: qty })
-  }
-  return items
-}
 
 export async function bookingItemsToStripeLineItems(
   items: Array<{ catalog_id: string; qty: number }>

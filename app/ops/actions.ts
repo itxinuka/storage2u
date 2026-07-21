@@ -803,6 +803,8 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         dateLabel: placedDateLabel,
       })),
       driver: null,
+      pickupVariance: null,
+      pickupSignoff: null,
     }
 
     const stop: ScheduleStop | null =
@@ -821,6 +823,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
             driverAssignmentId: null,
             dispatchAssignmentId: null,
             status: "scheduled",
+            pickupVariance: null,
           }
         : null
 

@@ -42,6 +42,17 @@ export type OpsOrder = {
   lineItems: OpsOrderLineItem[]
   units: OpsUnitLabel[]
   driver: string | null
+  pickupVariance: "exact" | "short" | "over" | "mixed" | null
+  pickupSignoff: {
+    signerName: string
+    signedAt: string
+    signatureDataUrl: string | null
+    scannedCount: number
+    addedCount: number
+    missingCount: number
+    varianceNotes: string | null
+    billingNote: string | null
+  } | null
 }
 
 export type OrdersPageData = {

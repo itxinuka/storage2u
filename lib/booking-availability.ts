@@ -78,15 +78,6 @@ export function isTimeWindowLabelBlocked(
   return isTimeWindowBlocked(date, windowId, blocks)
 }
 
-export function getAvailableTimeWindowIds(
-  date: string,
-  blocks: BookingBlock[]
-): TimeWindowId[] {
-  return TIME_WINDOWS.map((w) => w.id).filter(
-    (id) => !isTimeWindowBlocked(date, id, blocks)
-  )
-}
-
 export function validateBookingSchedule(
   scheduledDate: string,
   timeWindow: string,

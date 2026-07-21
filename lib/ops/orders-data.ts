@@ -1,6 +1,7 @@
 import { OPEN_DELIVERY_STATUSES } from "@/lib/delivery-statuses"
 import type { Database } from "@/lib/database.types"
 import type { OpsOrderStatus } from "@/lib/ops-types"
+import { derivePickupVariance } from "@/lib/ops/pickup-data"
 import { getOpsHub } from "@/lib/ops/schedule-data"
 import type {
   OpsOrder,
@@ -233,15 +234,49 @@ function resolveDriverLabel(
   return preferred?.shift_assignments?.vehicles?.label ?? null
 }
 
+type PickupSessionRow = {
+  booking_id: string
+  status: Database["public"]["Enums"]["pickup_session_status"]
+  expected_count: number
+  scanned_count: number
+  added_count: number
+  missing_count: number
+  signer_name: string | null
+  signed_at: string | null
+  signature_data_url: string | null
+  variance_notes: string | null
+  billing_note: string | null
+  completed_at: string | null
+}
+
+function resolvePickupSignoff(
+  session: PickupSessionRow | null
+): OpsOrder["pickupSignoff"] {
+  if (!session || session.status !== "completed" || !session.signer_name || !session.signed_at) {
+    return null
+  }
+  return {
+    signerName: session.signer_name,
+    signedAt: session.signed_at,
+    signatureDataUrl: session.signature_data_url,
+    scannedCount: session.scanned_count,
+    addedCount: session.added_count,
+    missingCount: session.missing_count,
+    varianceNotes: session.variance_notes,
+    billingNote: session.billing_note,
+  }
+}
+
 export async function getOrdersPageData(): Promise<OrdersPageData> {
   const supabase = createServiceRoleClient()
   const hub = getOpsHub()
 
-  const [bookingsResult, deliveriesResult, dispatchResult] = await Promise.all([
-    supabase
-      .from("bookings")
-      .select(
-        `
+  const [bookingsResult, deliveriesResult, dispatchResult, pickupResult] =
+    await Promise.all([
+      supabase
+        .from("bookings")
+        .select(
+          `
         id,
         profile_id,
         created_at,
@@ -255,28 +290,49 @@ export async function getOrdersPageData(): Promise<OrdersPageData> {
         booking_items ( id, kind, name, qty, unit_price_cents ),
         booking_units ( id, kind, code, label_name, unit_index, booking_item_id, created_at )
       `
-      )
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("delivery_requests")
-      .select("booking_id, status, requested_date")
-      .in("status", [...OPEN_DELIVERY_STATUSES]),
-    supabase
-      .from("dispatch_assignments")
-      .select(
-        `
+        )
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("delivery_requests")
+        .select("booking_id, status, requested_date")
+        .in("status", [...OPEN_DELIVERY_STATUSES]),
+      supabase
+        .from("dispatch_assignments")
+        .select(
+          `
         booking_id,
         stop_kind,
         shift_assignments (
           vehicles ( label )
         )
       `
-      ),
-  ])
+        ),
+      supabase
+        .from("pickup_sessions")
+        .select(
+          `
+        booking_id,
+        status,
+        expected_count,
+        scanned_count,
+        added_count,
+        missing_count,
+        signer_name,
+        signed_at,
+        signature_data_url,
+        variance_notes,
+        billing_note,
+        completed_at
+      `
+        )
+        .eq("status", "completed")
+        .order("completed_at", { ascending: false }),
+    ])
 
   if (bookingsResult.error) throw bookingsResult.error
   if (deliveriesResult.error) throw deliveriesResult.error
   if (dispatchResult.error) throw dispatchResult.error
+  if (pickupResult.error) throw pickupResult.error
 
   const openDeliveryByBooking = new Map<string, DeliveryRow>()
   for (const row of deliveriesResult.data ?? []) {
@@ -292,6 +348,13 @@ export async function getOrdersPageData(): Promise<OrdersPageData> {
     dispatchByBooking.set(row.booking_id, current)
   }
 
+  const pickupByBooking = new Map<string, PickupSessionRow>()
+  for (const row of (pickupResult.data as PickupSessionRow[] | null) ?? []) {
+    if (!pickupByBooking.has(row.booking_id)) {
+      pickupByBooking.set(row.booking_id, row)
+    }
+  }
+
   const orders: OpsOrder[] = ((bookingsResult.data as BookingRow[] | null) ?? []).map(
     (row) => {
       const openDelivery = openDeliveryByBooking.get(row.id) ?? null
@@ -303,6 +366,7 @@ export async function getOrdersPageData(): Promise<OrdersPageData> {
         row.monthly_total_cents > 0
           ? row.monthly_total_cents
           : lineItems.reduce((sum, item) => sum + item.subtotalCents, 0)
+      const pickupSession = pickupByBooking.get(row.id) ?? null
 
       return {
         id: row.id,
@@ -325,6 +389,16 @@ export async function getOrdersPageData(): Promise<OrdersPageData> {
         lineItems,
         units,
         driver: resolveDriverLabel(row.id, type, dispatchByBooking),
+        pickupVariance: pickupSession
+          ? derivePickupVariance({
+              expectedCount: pickupSession.expected_count,
+              scannedCount: pickupSession.scanned_count,
+              addedCount: pickupSession.added_count,
+              missingCount: pickupSession.missing_count,
+              status: pickupSession.status,
+            })
+          : null,
+        pickupSignoff: resolvePickupSignoff(pickupSession),
       }
     }
   )
