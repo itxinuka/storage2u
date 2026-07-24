@@ -1,11 +1,15 @@
 /** Campus anchors for move-in distance quoting (Mapbox driving distance). */
 
+export type MoveInServiceProvince = "NL" | "NS"
+
 export type MoveInCampus = {
   id: string
   universityId: string
   name: string
   /** Full address string for Mapbox geocoding / directions. */
   address: string
+  /** Province where the campus is located (auto-book service area). */
+  province: MoveInServiceProvince
   lat: number
   lng: number
 }
@@ -14,6 +18,11 @@ export type MoveInUniversity = {
   id: string
   name: string
   short: string
+}
+
+export const MOVE_IN_PROVINCE_LABELS: Record<MoveInServiceProvince, string> = {
+  NL: "Newfoundland and Labrador",
+  NS: "Nova Scotia",
 }
 
 export const MOVE_IN_UNIVERSITIES: MoveInUniversity[] = [
@@ -29,6 +38,7 @@ export const MOVE_IN_CAMPUSES: MoveInCampus[] = [
     universityId: "memorial",
     name: "St. John's (main campus)",
     address: "230 Elizabeth Ave, St. John's, NL A1B 3X9, Canada",
+    province: "NL",
     lat: 47.5707,
     lng: -52.7357,
   },
@@ -37,6 +47,7 @@ export const MOVE_IN_CAMPUSES: MoveInCampus[] = [
     universityId: "stfx",
     name: "Antigonish",
     address: "4130 University Ave, Antigonish, NS B2G 2W5, Canada",
+    province: "NS",
     lat: 45.6167,
     lng: -61.9986,
   },
@@ -45,6 +56,7 @@ export const MOVE_IN_CAMPUSES: MoveInCampus[] = [
     universityId: "dalhousie",
     name: "Studley Campus (Halifax)",
     address: "6299 South St, Halifax, NS B3H 4R2, Canada",
+    province: "NS",
     lat: 44.6366,
     lng: -63.5912,
   },
@@ -53,6 +65,7 @@ export const MOVE_IN_CAMPUSES: MoveInCampus[] = [
     universityId: "dalhousie",
     name: "Sexton Campus (Halifax)",
     address: "5269 Morris St, Halifax, NS B3J 1B6, Canada",
+    province: "NS",
     lat: 44.6424,
     lng: -63.5749,
   },
@@ -61,6 +74,7 @@ export const MOVE_IN_CAMPUSES: MoveInCampus[] = [
     universityId: "cna",
     name: "Prince Philip Drive (St. John's)",
     address: "Prince Philip Dr, St. John's, NL A1B 3R9, Canada",
+    province: "NL",
     lat: 47.5612,
     lng: -52.7789,
   },
@@ -69,6 +83,7 @@ export const MOVE_IN_CAMPUSES: MoveInCampus[] = [
     universityId: "cna",
     name: "Corner Brook",
     address: "432 Massachusetts Dr, Corner Brook, NL A2H 6X9, Canada",
+    province: "NL",
     lat: 48.9489,
     lng: -57.9436,
   },
@@ -77,6 +92,7 @@ export const MOVE_IN_CAMPUSES: MoveInCampus[] = [
     universityId: "cna",
     name: "Gander",
     address: "20 Airport Blvd, Gander, NL A1V 1K8, Canada",
+    province: "NL",
     lat: 48.9569,
     lng: -54.6089,
   },
@@ -85,6 +101,7 @@ export const MOVE_IN_CAMPUSES: MoveInCampus[] = [
     universityId: "cna",
     name: "Grand Falls-Windsor",
     address: "1 College Rd, Grand Falls-Windsor, NL A2A 1N3, Canada",
+    province: "NL",
     lat: 48.9178,
     lng: -55.6514,
   },

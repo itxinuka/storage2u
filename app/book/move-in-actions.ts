@@ -13,8 +13,12 @@ import { sendMoveInQuoteRequestEmail } from "@/lib/email"
 import {
   getCampusById,
   getUniversityById,
+  type MoveInServiceProvince,
 } from "@/lib/move-in-campuses"
-import { computeMoveInPrice } from "@/lib/move-in-pricing"
+import {
+  computeMoveInPrice,
+  type MoveInOverCapReason,
+} from "@/lib/move-in-pricing"
 import {
   formatHomeAddress,
   quoteDrivingDistanceKm,
@@ -63,6 +67,8 @@ export type MoveInQuoteResult =
   | {
       success: true
       overCap: true
+      overCapReason: MoveInOverCapReason
+      campusProvince: MoveInServiceProvince
       distanceKm: number
       home: LngLat
       campus: LngLat
@@ -157,7 +163,12 @@ async function revalidateMoveInQuote(
     }
   }
 
-  const price = computeMoveInPrice(distanceResult.distanceKm, count)
+  const price = computeMoveInPrice(
+    distanceResult.distanceKm,
+    count,
+    input.homeAddress.province,
+    campus.province
+  )
   return {
     campus,
     university,
@@ -189,6 +200,8 @@ export async function calculateMoveInQuote(
     return {
       success: true,
       overCap: true,
+      overCapReason: price.overCapReason,
+      campusProvince: campus.province,
       distanceKm,
       home: map.home,
       campus: map.campus,

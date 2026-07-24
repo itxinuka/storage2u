@@ -45,6 +45,7 @@ import {
 } from "@/lib/booking-catalog"
 import {
   getCampusesForUniversity,
+  MOVE_IN_PROVINCE_LABELS,
   MOVE_IN_UNIVERSITIES,
 } from "@/lib/move-in-campuses"
 import {
@@ -650,9 +651,21 @@ export function MoveInWizard({ modeToggle }: MoveInWizardProps) {
                             Custom quote required
                           </p>
                           <p className="mt-2 text-sm text-muted-foreground">
-                            Your home is about {quote.distanceKm.toFixed(0)} km from
-                            campus — beyond our online booking limit. Request a custom
-                            quote and we&apos;ll get back to you.
+                            {quote.overCapReason === "out_of_province" ? (
+                              <>
+                                We currently auto-book move-ins within{" "}
+                                {MOVE_IN_PROVINCE_LABELS[quote.campusProvince]}{" "}
+                                only. Request a custom quote and we&apos;ll get
+                                back to you.
+                              </>
+                            ) : (
+                              <>
+                                Your home is about{" "}
+                                {quote.distanceKm.toFixed(0)} km from campus —
+                                beyond our online booking limit. Request a
+                                custom quote and we&apos;ll get back to you.
+                              </>
+                            )}
                           </p>
                         </CardContent>
                       </Card>
